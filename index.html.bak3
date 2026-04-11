@@ -298,7 +298,7 @@ function preloadVoiceClips() {
 
 function playVoiceClip(category, volume) {
   var now = Date.now();
-  // Don't overlap voice clips - minimum gap
+  // Don't overlap voice clips
   if (now - lastVoicePlayTime < 200) return;
   
   // Ensure AudioContext is active (browsers suspend it after inactivity)
@@ -307,11 +307,10 @@ function playVoiceClip(category, volume) {
   }
   
   var gender = ownerGender || 'male';
+  var clip = voiceAudioCache[gender] && voiceAudioCache[gender][category];
   
-  // Get the original data URI from VOICE_CLIPS (most reliable approach)
-  var dataURI = VOICE_CLIPS[gender] && VOICE_CLIPS[gender][category];
-  if (!dataURI) {
-    console.log('[VOICE] No clip data for', gender, category);
+  if (!clip) {
+    console.log('[VOICE] No clip for', gender, category);
     return;
   }
   
@@ -321,8 +320,8 @@ function playVoiceClip(category, volume) {
       try { currentVoiceAudio.pause(); currentVoiceAudio.currentTime = 0; } catch(e) {}
     }
     
-    // Create a fresh Audio element each time (most reliable across browsers)
-    var playable = new Audio(dataURI);
+    // Clone the audio so we can play overlapping if needed
+    var playable = clip.cloneNode();
     playable.volume = Math.min(volume || 1.0, 1.0);
     
     var playPromise = playable.play();
@@ -364,142 +363,6 @@ function getShoutCategory() {
     return low[Math.floor(Math.random() * low.length)];
   }
 }
-
-
-
-
-function shoutName() {
-    var now = Date.now();
-    var cooldown = panicLevel > 70 ? 1200 : panicLevel > 40 ? 1800 : 2500;
-    if (now - lastShoutTime < cooldown) return;
-    lastShoutTime = now;
-    lastVoiceTime = now;
-    
-    // Ensure audio context is alive (browsers suspend after inactivity)
-    if (audioCtx && audioCtx.state === 'suspended') {
-      try { audioCtx.resume(); } catch(e) {}
-    }
-    
-    var boyGirl = (dogGender === 'girl' ? 'girl' : 'boy');
-    var heShe = (dogGender === 'girl' ? 'she' : 'he');
-    
-    // Pick a contextual line based on panic level
-    var lines;
-    if (panicLevel > 70) {
-      lines = [
-        dogName + '!! COME BACK HERE NOW!!',
-        'SOMEBODY STOP THAT DOG!!',
-        'OH MY GOD ' + dogName + '!!',
-        dogName + '!! I SAID COME HERE!!',
-        'JESUS CHRIST ' + dogName + '!!',
-        dogName + '!! STOP RIGHT NOW!!',
-        'OH GOD WHAT HAS ' + heShe.toUpperCase() + ' DONE NOW!!',
-        'FOR FUCK SAKE ' + dogName + '!!',
-        'BLOODY DOG!!',
-        'OH THAT\'S NOT MY DOG!!',
-        dogName + '!! YOU BLOODY MENACE!!',
-        'FOR GOD SAKE STOP THAT DOG!!',
-        'I NEVER WANTED A DOG!!',
-        'OH SHIT ' + dogName + ' NO!!'
-      ];
-    } else if (panicLevel > 40) {
-      lines = [
-        dogName + '! NO! Bad ' + boyGirl + '!',
-        dogName + '! Come back here!',
-        dogName + '! Leave it!',
-        'Oh god ' + dogName + '!',
-        dogName + '! STOP!',
-        dogName + '! Drop it!',
-        'What are you doing ' + dogName + '?!',
-        'Bloody hell ' + dogName + '!',
-        dogName + '! I swear to god!',
-        'Oh for fuck sake ' + dogName + '!'
-      ];
-    } else {
-      lines = [
-        dogName + '! Come here ' + boyGirl + '!',
-        dogName + '! Come back!',
-        dogName + '! Walkies!',
-        dogName + '! Here ' + boyGirl + '!',
-        dogName + '! Want a treat?',
-        dogName + '! Come on, good ' + boyGirl + '!'
-      ];
-    }
-    
-    var line = lines[Math.floor(Math.random() * lines.length)];
-    speakLine(line, panicLevel > 50 ? 1.3 : 1.1, panicLevel > 50 ? 1.2 : 1.0, true);
-    
-    // Also play a small tone as extra feedback
-    if (panicLevel > 50) {
-      playTone(600, 0.08, 'square', 0.1, 400);
-    }
-  }
-  
-function speakLine(text, rate, pitch, priority) {
-    if (!text) return;
-    var now = Date.now();
-    if (now - lastVoicePlayTime < 300) return;
-    
-    // Map text to a voice clip category
-    var lower = (text || '').toLowerCase();
-    var cat = 'calm';
-    if (lower.indexOf('park keeper') >= 0) cat = 'parkkeeper';
-    else if (lower.indexOf('duck') >= 0) cat = 'ducks';
-    else if (lower.indexOf('squirrel') >= 0) cat = 'squirrels';
-    else if (lower.indexOf('good') >= 0 && (lower.indexOf('boy') >= 0 || lower.indexOf('girl') >= 0)) cat = 'goodboy';
-    else if (lower.indexOf('fetch') >= 0) cat = 'fetch';
-    else if (lower.indexOf('eat') >= 0 || lower.indexOf('food') >= 0) cat = 'food';
-    else if (lower.indexOf('poo') >= 0 || lower.indexOf('not here') >= 0) cat = 'poo';
-    else if (lower.indexOf('tree') >= 0) cat = 'tree';
-    else if (lower.indexOf('never') >= 0 || lower.indexOf('i never') >= 0) cat = 'never';
-    else if (lower.indexOf('oh my god') >= 0 || lower.indexOf('oh god') >= 0 || lower.indexOf('jesus') >= 0 || lower.indexOf('oh shit') >= 0) cat = 'omg';
-    else if (lower.indexOf('fuck') >= 0 || lower.indexOf('bloody') >= 0 || lower.indexOf('menace') >= 0 || lower.indexOf('swear') >= 0) cat = 'panic';
-    else if (lower.indexOf('stop') >= 0 || lower.indexOf('come back') >= 0 || lower.indexOf('somebody') >= 0 || lower.indexOf('come here') >= 0) cat = 'panic';
-    else if (lower.indexOf('bad') >= 0 || lower.indexOf('leave it') >= 0 || lower.indexOf('drop') >= 0 || lower.indexOf('not my dog') >= 0) cat = 'annoyed';
-    
-    // PRIMARY: Use AI voice clips (proper male/female voices)
-    var gender = ownerGender || 'male';
-    var hasClip = VOICE_CLIPS[gender] && VOICE_CLIPS[gender][cat];
-    if (hasClip) {
-      // Play the clip directly (don't set lastVoicePlayTime here - playVoiceClip handles it)
-      playVoiceClip(cat, priority ? 1.0 : 0.85);
-      console.log('[VOICE] Playing AI clip:', gender, cat);
-      return;
-    }
-    
-    // FALLBACK: Use speechSynthesis only if no AI clip available
-    if (typeof speechSynthesis !== 'undefined') {
-      try {
-        lastVoicePlayTime = now;
-        var voices = speechSynthesis.getVoices();
-        var voice = null;
-        
-        if (ownerGender === 'female') {
-          voice = voices.find(function(v) { return v.lang.includes('en-GB') && v.name.toLowerCase().includes('female'); })
-            || voices.find(function(v) { return v.name.toLowerCase().includes('female') && v.lang.includes('en'); })
-            || voices.find(function(v) { return v.lang.includes('en-GB'); })
-            || voices.find(function(v) { return v.lang.includes('en'); });
-        } else {
-          voice = voices.find(function(v) { return v.lang.includes('en-GB') && v.name.toLowerCase().includes('male'); })
-            || voices.find(function(v) { return v.name.toLowerCase().includes('male') && v.lang.includes('en'); })
-            || voices.find(function(v) { return v.lang.includes('en-GB'); })
-            || voices.find(function(v) { return v.lang.includes('en'); });
-        }
-        
-        speechSynthesis.cancel();
-        var utter = new SpeechSynthesisUtterance(text);
-        if (voice) utter.voice = voice;
-        utter.rate = rate || 1.1;
-        utter.pitch = ownerGender === 'female' ? (pitch || 1.0) * 1.15 : (pitch || 1.0);
-        utter.volume = 1.0;
-        speechSynthesis.resume();
-        speechSynthesis.speak(utter);
-        console.log('[VOICE] speechSynthesis fallback:', text);
-      } catch(e) {
-        console.log('[VOICE] All voice methods failed');
-      }
-    }
-  }
 
 
 
@@ -560,16 +423,17 @@ let keys = {};
 let touchX = null, touchActive = false;
 let mouseX = null;
 
-// ==================== AUDIO CORE ====================
+// Audio context
 let audioCtx = null;
 function ensureAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
+  // Ensure voice clips are preloaded on every user interaction
   if (!voicesReady) preloadVoiceClips();
 }
 
-function playTone(freq, dur, type, vol, slide) {
-  type = type || 'square'; vol = vol || 0.15; slide = slide || 0;
+// ==================== AUDIO SYSTEM ====================
+function playTone(freq, dur, type='square', vol=0.15, slide=0) {
   if (!audioCtx) return;
   try {
     const o = audioCtx.createOscillator();
@@ -585,6 +449,13 @@ function playTone(freq, dur, type, vol, slide) {
     o.stop(audioCtx.currentTime + dur);
   } catch(e) {}
 }
+
+function sfx_bark() { playTone(300, 0.12, 'square', 0.35, 200); setTimeout(() => playTone(400, 0.1, 'square', 0.3, -100), 90); }
+function sfx_catch() { playTone(523, 0.15, 'sine', 0.35); setTimeout(() => playTone(659, 0.15, 'sine', 0.35), 100); setTimeout(() => playTone(784, 0.2, 'sine', 0.4), 200); }
+function sfx_hit() { playTone(100, 0.3, 'sawtooth', 0.4, -50); }
+function sfx_boost() { playTone(200, 0.4, 'sawtooth', 0.35, 600); }
+function sfx_pickup() { playTone(880, 0.12, 'sine', 0.35); setTimeout(() => playTone(1100, 0.15, 'sine', 0.4), 80); }
+function sfx_quack() { playTone(250, 0.2, 'sawtooth', 0.35, 100); setTimeout(() => playTone(280, 0.15, 'sawtooth', 0.3, -50), 160); }
 
 // ==================== AI MUSIC SYSTEM (ElevenLabs Generated) ====================
 let musicPlaying = false;
@@ -685,15 +556,9 @@ function sfx_poo() {
   setTimeout(() => playTone(60, 0.15, 'sine', 0.1, -20), 200);
   setTimeout(() => playTone(100, 0.08, 'triangle', 0.08, 0), 350);
 }
-// ==================== SFX FUNCTIONS ====================
-function sfx_bark() { playTone(300, 0.12, 'square', 0.35, 200); setTimeout(() => playTone(400, 0.1, 'square', 0.3, -100), 90); }
-function sfx_catch() { playTone(523, 0.15, 'sine', 0.35); setTimeout(() => playTone(659, 0.15, 'sine', 0.35), 100); setTimeout(() => playTone(784, 0.2, 'sine', 0.4), 200); }
-function sfx_hit() { playTone(100, 0.3, 'sawtooth', 0.4, -50); }
-function sfx_boost() { playTone(200, 0.4, 'sawtooth', 0.35, 600); }
-function sfx_pickup() { playTone(880, 0.12, 'sine', 0.35); setTimeout(() => playTone(1100, 0.15, 'sine', 0.4), 80); }
-function sfx_quack() { playTone(250, 0.2, 'sawtooth', 0.35, 100); setTimeout(() => playTone(280, 0.15, 'sawtooth', 0.3, -50), 160); }
 
 function sfx_bagPickup() {
+  // Rustling bag sound
   playTone(400, 0.05, 'sawtooth', 0.08, 200);
   setTimeout(() => playTone(500, 0.04, 'sawtooth', 0.06, -100), 60);
   setTimeout(() => playTone(350, 0.06, 'sawtooth', 0.07, 100), 120);
@@ -706,6 +571,7 @@ function sfx_splash() {
 }
 
 function spawnSplash(x, y) {
+  // Blue water particles flying up
   for (let i = 0; i < 15; i++) {
     const angle = -Math.PI/2 + rand(-1, 1);
     particles.push({
@@ -717,6 +583,7 @@ function spawnSplash(x, y) {
       color: Math.random() < 0.5 ? '#74C0E3' : '#fff'
     });
   }
+  // Water ring
   for (let i = 0; i < 10; i++) {
     const angle = (Math.PI * 2 / 10) * i;
     particles.push({
@@ -729,6 +596,142 @@ function spawnSplash(x, y) {
     });
   }
 }
+
+
+function shoutName() {
+    var now = Date.now();
+    var cooldown = panicLevel > 70 ? 1200 : panicLevel > 40 ? 1800 : 2500;
+    if (now - lastShoutTime < cooldown) return;
+    lastShoutTime = now;
+    lastVoiceTime = now;
+    
+    // Ensure audio context is alive (browsers suspend after inactivity)
+    if (audioCtx && audioCtx.state === 'suspended') {
+      try { audioCtx.resume(); } catch(e) {}
+    }
+    
+    var boyGirl = (dogGender === 'girl' ? 'girl' : 'boy');
+    var heShe = (dogGender === 'girl' ? 'she' : 'he');
+    
+    // Pick a contextual line based on panic level
+    var lines;
+    if (panicLevel > 70) {
+      lines = [
+        dogName + '!! COME BACK HERE NOW!!',
+        'SOMEBODY STOP THAT DOG!!',
+        'OH MY GOD ' + dogName + '!!',
+        dogName + '!! I SAID COME HERE!!',
+        'JESUS CHRIST ' + dogName + '!!',
+        dogName + '!! STOP RIGHT NOW!!',
+        'OH GOD WHAT HAS ' + heShe.toUpperCase() + ' DONE NOW!!',
+        'FOR FUCK SAKE ' + dogName + '!!',
+        'BLOODY DOG!!',
+        'OH THAT\'S NOT MY DOG!!',
+        dogName + '!! YOU BLOODY MENACE!!',
+        'FOR GOD SAKE STOP THAT DOG!!',
+        'I NEVER WANTED A DOG!!',
+        'OH SHIT ' + dogName + ' NO!!'
+      ];
+    } else if (panicLevel > 40) {
+      lines = [
+        dogName + '! NO! Bad ' + boyGirl + '!',
+        dogName + '! Come back here!',
+        dogName + '! Leave it!',
+        'Oh god ' + dogName + '!',
+        dogName + '! STOP!',
+        dogName + '! Drop it!',
+        'What are you doing ' + dogName + '?!',
+        'Bloody hell ' + dogName + '!',
+        dogName + '! I swear to god!',
+        'Oh for fuck sake ' + dogName + '!'
+      ];
+    } else {
+      lines = [
+        dogName + '! Come here ' + boyGirl + '!',
+        dogName + '! Come back!',
+        dogName + '! Walkies!',
+        dogName + '! Here ' + boyGirl + '!',
+        dogName + '! Want a treat?',
+        dogName + '! Come on, good ' + boyGirl + '!'
+      ];
+    }
+    
+    var line = lines[Math.floor(Math.random() * lines.length)];
+    speakLine(line, panicLevel > 50 ? 1.3 : 1.1, panicLevel > 50 ? 1.2 : 1.0, true);
+    
+    // Also play a small tone as extra feedback
+    if (panicLevel > 50) {
+      playTone(600, 0.08, 'square', 0.1, 400);
+    }
+  }
+  
+function speakLine(text, rate, pitch, priority) {
+    if (!text) return;
+    var now = Date.now();
+    if (now - lastVoicePlayTime < 300) return;
+    
+    // Map text to a voice clip category
+    var lower = (text || '').toLowerCase();
+    var cat = 'calm';
+    if (lower.indexOf('park keeper') >= 0) cat = 'parkkeeper';
+    else if (lower.indexOf('duck') >= 0) cat = 'ducks';
+    else if (lower.indexOf('squirrel') >= 0) cat = 'squirrels';
+    else if (lower.indexOf('good') >= 0 && (lower.indexOf('boy') >= 0 || lower.indexOf('girl') >= 0)) cat = 'goodboy';
+    else if (lower.indexOf('fetch') >= 0) cat = 'fetch';
+    else if (lower.indexOf('eat') >= 0 || lower.indexOf('food') >= 0) cat = 'food';
+    else if (lower.indexOf('poo') >= 0 || lower.indexOf('not here') >= 0) cat = 'poo';
+    else if (lower.indexOf('tree') >= 0) cat = 'tree';
+    else if (lower.indexOf('never') >= 0 || lower.indexOf('i never') >= 0) cat = 'never';
+    else if (lower.indexOf('oh my god') >= 0 || lower.indexOf('oh god') >= 0 || lower.indexOf('jesus') >= 0 || lower.indexOf('oh shit') >= 0) cat = 'omg';
+    else if (lower.indexOf('fuck') >= 0 || lower.indexOf('bloody') >= 0 || lower.indexOf('menace') >= 0 || lower.indexOf('swear') >= 0) cat = 'panic';
+    else if (lower.indexOf('stop') >= 0 || lower.indexOf('come back') >= 0 || lower.indexOf('somebody') >= 0 || lower.indexOf('come here') >= 0) cat = 'panic';
+    else if (lower.indexOf('bad') >= 0 || lower.indexOf('leave it') >= 0 || lower.indexOf('drop') >= 0 || lower.indexOf('not my dog') >= 0) cat = 'annoyed';
+    
+    // PRIMARY: Use AI voice clips (proper male/female voices)
+    var gender = ownerGender || 'male';
+    var clip = voiceAudioCache[gender] && voiceAudioCache[gender][cat];
+    if (clip) {
+      // Only update lastVoicePlayTime if we actually attempt to play
+      lastVoicePlayTime = now;
+      playVoiceClip(cat, priority ? 1.0 : 0.85);
+      console.log('[VOICE] Playing AI clip:', gender, cat);
+      return;
+    }
+    
+    // FALLBACK: Use speechSynthesis only if no AI clip available
+    if (typeof speechSynthesis !== 'undefined') {
+      try {
+        lastVoicePlayTime = now;
+        var voices = speechSynthesis.getVoices();
+        var voice = null;
+        
+        if (ownerGender === 'female') {
+          voice = voices.find(function(v) { return v.lang.includes('en-GB') && v.name.toLowerCase().includes('female'); })
+            || voices.find(function(v) { return v.name.toLowerCase().includes('female') && v.lang.includes('en'); })
+            || voices.find(function(v) { return v.lang.includes('en-GB'); })
+            || voices.find(function(v) { return v.lang.includes('en'); });
+        } else {
+          voice = voices.find(function(v) { return v.lang.includes('en-GB') && v.name.toLowerCase().includes('male'); })
+            || voices.find(function(v) { return v.name.toLowerCase().includes('male') && v.lang.includes('en'); })
+            || voices.find(function(v) { return v.lang.includes('en-GB'); })
+            || voices.find(function(v) { return v.lang.includes('en'); });
+        }
+        
+        speechSynthesis.cancel();
+        var utter = new SpeechSynthesisUtterance(text);
+        if (voice) utter.voice = voice;
+        utter.rate = rate || 1.1;
+        utter.pitch = ownerGender === 'female' ? (pitch || 1.0) * 1.15 : (pitch || 1.0);
+        utter.volume = 1.0;
+        speechSynthesis.resume();
+        speechSynthesis.speak(utter);
+        console.log('[VOICE] speechSynthesis fallback:', text);
+      } catch(e) {
+        console.log('[VOICE] All voice methods failed');
+      }
+    }
+  }
+
 
 // ==================== RESIZE ====================
 function resize() {
@@ -3070,12 +3073,12 @@ requestAnimationFrame(gameLoop);
     if (!voicesReady) preloadVoiceClips();
     // Try to play and immediately pause a silent clip to unlock audio
     try {
-      var testURI = VOICE_CLIPS[ownerGender || 'male']['calm'];
-      if (testURI) {
-        var warmup = new Audio(testURI);
+      var testClip = voiceAudioCache[ownerGender || 'male']['calm'];
+      if (testClip) {
+        var warmup = testClip.cloneNode();
         warmup.volume = 0.01;
         var p = warmup.play();
-        if (p) p.then(function() { setTimeout(function(){ warmup.pause(); }, 100); }).catch(function(){});
+        if (p) p.then(function() { warmup.pause(); }).catch(function(){});
       }
     } catch(e) {}
   }, { once: true });

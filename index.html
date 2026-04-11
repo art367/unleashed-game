@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>UNLEASHED! 🐕</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:absolute;top:0;left:0}
+#ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.screen{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;pointer-events:auto}
+.screen.active{display:flex}
+#menuScreen{background:rgba(0,0,0,0.3)}
+#gameOverScreen{background:rgba(0,0,0,0.6)}
+h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,217,61,0.5),0 4px 0 #e6a800;letter-spacing:2px;margin-bottom:5px;animation:bounce 1s ease infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.subtitle{color:#fff;font-size:clamp(0.8rem,2.5vw,1.1rem);opacity:0.8;margin-bottom:25px;font-style:italic}
+.breed-select{display:flex;gap:12px;margin:15px 0;flex-wrap:wrap;justify-content:center}
+.breed-card{background:rgba(255,255,255,0.1);border:3px solid rgba(255,255,255,0.2);border-radius:16px;padding:12px 16px;cursor:pointer;transition:all 0.3s;text-align:center;min-width:100px;pointer-events:auto}
+.breed-card:hover,.breed-card.selected{border-color:#FFD93D;background:rgba(255,217,61,0.15);transform:scale(1.05)}
+.breed-card .emoji{font-size:2rem;display:block;margin-bottom:4px}
+.breed-card .name{color:#fff;font-weight:bold;font-size:0.9rem}
+.breed-card .stat{color:rgba(255,255,255,0.6);font-size:0.7rem;margin-top:2px}
+.name-input-wrap{margin:10px 0;display:flex;align-items:center;gap:8px}
+.name-input-wrap label{color:rgba(255,255,255,0.7);font-size:0.85rem}
+#dogNameInput{background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.3);border-radius:8px;padding:6px 12px;color:#FFD93D;font-size:1rem;width:140px;text-align:center;font-weight:bold;outline:none;text-transform:uppercase;pointer-events:auto}
+#dogNameInput:focus{border-color:#FFD93D}
+.start-btn{background:linear-gradient(135deg,#FF6B6B,#ee5a24);border:none;color:#fff;font-size:clamp(1rem,3vw,1.3rem);padding:12px 40px;border-radius:50px;cursor:pointer;margin-top:15px;font-weight:bold;letter-spacing:1px;transition:all 0.3s;pointer-events:auto;box-shadow:0 4px 15px rgba(255,107,107,0.4)}
+.start-btn:hover{transform:scale(1.05);box-shadow:0 6px 25px rgba(255,107,107,0.6)}
+.go-title{font-size:clamp(3rem,12vw,7rem);color:#FF6B6B;text-shadow:0 0 40px rgba(255,107,107,0.6),0 4px 0 #c0392b;margin-bottom:10px}
+.go-subtitle{color:#FFD93D;font-size:clamp(1rem,3vw,1.5rem);margin-bottom:10px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin:15px 0;text-align:center}
+.stat-item{color:rgba(255,255,255,0.7);font-size:0.85rem}
+.stat-item span{display:block;color:#fff;font-size:1.3rem;font-weight:bold}
+.chaos-rating{font-size:clamp(1.2rem,4vw,1.8rem);margin:10px 0;padding:8px 20px;border-radius:50px;font-weight:bold}
+.high-score-note{color:#FFD93D;font-size:0.9rem;margin:5px 0;animation:pulse 1s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+#hud{position:absolute;top:0;left:0;width:100%;padding:10px 15px;display:none;pointer-events:none}
+#hud.active{display:flex;justify-content:space-between;align-items:flex-start}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:4px}
+.hud-score{color:#fff;font-size:clamp(1rem,3vw,1.4rem);font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,0.5)}
+.hud-distance{color:rgba(255,255,255,0.7);font-size:clamp(0.65rem,1.8vw,0.8rem);text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+.panic-bar-wrap{width:clamp(80px,20vw,120px);height:14px;background:rgba(0,0,0,0.4);border-radius:7px;overflow:hidden;border:1px solid rgba(255,255,255,0.2)}
+.panic-bar{height:100%;width:0%;border-radius:7px;transition:width 0.3s,background 0.3s}
+.panic-label{color:rgba(255,255,255,0.6);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+.combo-display{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#FFD93D;font-size:2rem;font-weight:bold;text-shadow:0 0 20px rgba(255,217,61,0.5);pointer-events:none;opacity:0;transition:none}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+<div id="menuScreen" class="screen active">
+<h1>🐕 UNLEASHED!</h1>
+<div class="subtitle">Every dog's dream. Every owner's nightmare.</div>
+<div class="breed-select">
+<div class="breed-card selected" data-breed="labrador" onclick="selectBreed(this)">
+<span class="emoji">🦮</span>
+<div class="name">Labrador</div>
+<div class="stat">⚡ Balanced</div>
+</div>
+<div class="breed-card" data-breed="greyhound" onclick="selectBreed(this)">
+<span class="emoji">🐕‍🦺</span>
+<div class="name">Greyhound</div>
+<div class="stat">💨 Speed+</div>
+</div>
+<div class="breed-card" data-breed="terrier" onclick="selectBreed(this)">
+<span class="emoji">🐕</span>
+<div class="name">Terrier</div>
+<div class="stat">🌀 Agility+</div>
+</div>
+</div>
+<div class="name-input-wrap">
+<label>Dog name:</label>
+<input type="text" id="dogNameInput" value="FENTON" maxlength="12" placeholder="FENTON">
+</div>
+<button class="start-btn" onclick="startGame()">🐾 LET'S GO!</button>
+<div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px">Arrow keys / touch to move • Space / tap to dash</div>
+</div>
+<div id="gameOverScreen" class="screen">
+<div class="go-title">CAUGHT!</div>
+<div class="go-subtitle" id="goSubtitle">Back on the lead...</div>
+<div class="stats-grid">
+<div class="stat-item"><span id="goScore">0</span>Score</div>
+<div class="stat-item"><span id="goDistance">0m</span>Distance</div>
+<div class="stat-item"><span id="goChaos">0</span>Chaos</div>
+<div class="stat-item"><span id="goAnimals">0</span>Animals</div>
+</div>
+<div class="chaos-rating" id="chaosRating">Good Boy 😇</div>
+<div class="high-score-note" id="highScoreNote" style="display:none">🏆 NEW HIGH SCORE!</div>
+<button class="start-btn" onclick="restartGame()">🔄 RUN AGAIN!</button>
+</div>
+<div id="hud">
+<div class="hud-left">
+<div class="hud-score" id="hudScore">0</div>
+<div class="hud-distance" id="hudDistance">0m</div>
+</div>
+<div class="hud-right">
+<div class="panic-label">Owner Panic</div>
+<div class="panic-bar-wrap"><div class="panic-bar" id="panicBar"></div></div>
+</div>
+</div>
+<div class="combo-display" id="comboDisplay"></div>
+</div>
+<script>
+
+// roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (typeof r === 'number') r = [r,r,r,r];
+    const [tl,tr,br,bl] = r;
+    this.moveTo(x+tl, y);
+    this.lineTo(x+w-tr, y);
+    this.quadraticCurveTo(x+w, y, x+w, y+tr);
+    this.lineTo(x+w, y+h-br);
+    this.quadraticCurveTo(x+w, y+h, x+w-br, y+h);
+    this.lineTo(x+bl, y+h);
+    this.quadraticCurveTo(x, y+h, x, y+h-bl);
+    this.lineTo(x, y+tl);
+    this.quadraticCurveTo(x, y, x+tl, y);
+    this.closePath();
+    return this;
+  };
+}
+
+// ==================== CONSTANTS & CONFIG ====================
+const BREEDS = {
+  labrador: { name:'Labrador', speed:1.0, stamina:1.3, agility:1.0, color:'#D4A843', darkColor:'#B8922A', earColor:'#C49B35' },
+  greyhound: { name:'Greyhound', speed:1.35, stamina:0.8, agility:0.95, color:'#C4A882', darkColor:'#A89070', earColor:'#B09575' },
+  terrier: { name:'Terrier', speed:0.95, stamina:1.0, agility:1.35, color:'#8B7355', darkColor:'#6B5A42', earColor:'#7A6548' }
+};
+
+const COLORS = {
+  grass1:'#6BCB77', grass2:'#5DBF6A', path:'#C4A46C', pathEdge:'#B3945C',
+  water:'#74C0E3', waterDeep:'#5BA8CB', sky:'#A0E7E5',
+  tree:'#3A8C4A', treeDark:'#2F7A3E', trunk:'#8B6914',
+  bush:'#4A9F5A', flower1:'#FF6B6B', flower2:'#FFD93D', flower3:'#E8A0BF',
+  bench:'#8B6914', blanket1:'#FF6B6B', blanket2:'#fff',
+  squirrel:'#A0522D', squirrelLight:'#CD853F',
+  duck:'#F5F5F5', duckHead:'#2E8B57', duckBeak:'#FFA500',
+  deer:'#C4A46C', deerDark:'#A08050', deerAntler:'#8B7355',
+  otherDog:'#D2691E',
+  bone:'#F5F5DC', ball:'#9ACD32', food:'#DAA520',
+  owner:'#4A90D9', ownerSkin:'#FDBCB4', ownerHair:'#4A3728'
+};
+
+const PANIC_LINES = [
+  { threshold:0, lines:["Here boy!","Come back!","Good dog, come!","Walkies!"], rate:0.9, pitch:1.0 },
+  { threshold:25, lines:["{NAME}!","{NAME}, come here!","Bad dog!","No no no!","Come HERE!"], rate:1.0, pitch:1.1 },
+  { threshold:50, lines:["{NAME}!!","{NAME}!! COME BACK!","STOP! {NAME}!!","Somebody grab that dog!","Oh for—{NAME}!!"], rate:1.1, pitch:1.2 },
+  { threshold:75, lines:["OH JESUS CHRIST!","{NAME}!! OH GOD!!","THE DEEEEER!!","OH MY GOD {NAME}!!","FENTOOON!! I mean—{NAME}!!","NOT THE DUCKS! {NAME}!!"], rate:1.3, pitch:1.4 }
+];
+
+const CHAOS_RATINGS = [
+  { min:0, label:'Good Boy 😇', color:'#6BCB77' },
+  { min:200, label:'Naughty Pup 😏', color:'#FFD93D' },
+  { min:500, label:'Park Menace 😈', color:'#FFA500' },
+  { min:1000, label:'Chaos Agent 🔥', color:'#FF6B6B' },
+  { min:2000, label:'ABSOLUTE LEGEND 👑', color:'#FFD93D' }
+];
+
+// ==================== GAME STATE ====================
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+let state = 'menu'; // menu, playing, gameover
+let selectedBreed = 'labrador';
+let dogName = 'FENTON';
+let highScore = parseInt(localStorage.getItem('unleashed_high') || '0');
+
+// Game objects
+let dog, owner, camera;
+let animals = [], obstacles = [], pickups = [], particles = [], floatTexts = [];
+let grassStripes = [], trees = [], scenery = [];
+
+// Game metrics
+let score, distance, chaosPoints, animalsCaught, combo, comboTimer;
+let panicLevel, gameSpeed, spawnTimer, difficultyTimer;
+let shakeX, shakeY, shakeDuration;
+let dashCooldown, dashActive, dashTimer;
+let lastVoiceTime = 0;
+let gameTime = 0;
+
+// Input
+let keys = {};
+let touchX = null, touchActive = false;
+let mouseX = null;
+
+// Audio context
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// ==================== AUDIO SYSTEM ====================
+function playTone(freq, dur, type='square', vol=0.15, slide=0) {
+  if (!audioCtx) return;
+  try {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    if (slide) o.frequency.linearRampToValueAtTime(freq + slide, audioCtx.currentTime + dur);
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + dur);
+  } catch(e) {}
+}
+
+function sfx_bark() { playTone(300, 0.08, 'square', 0.12, 200); setTimeout(() => playTone(400, 0.06, 'square', 0.1, -100), 90); }
+function sfx_catch() { playTone(523, 0.1, 'sine', 0.12); setTimeout(() => playTone(659, 0.1, 'sine', 0.12), 100); setTimeout(() => playTone(784, 0.15, 'sine', 0.15), 200); }
+function sfx_hit() { playTone(100, 0.2, 'sawtooth', 0.15, -50); }
+function sfx_boost() { playTone(200, 0.3, 'sawtooth', 0.08, 600); }
+function sfx_pickup() { playTone(880, 0.08, 'sine', 0.1); setTimeout(() => playTone(1100, 0.12, 'sine', 0.12), 80); }
+function sfx_quack() { playTone(250, 0.15, 'sawtooth', 0.1, 100); setTimeout(() => playTone(280, 0.1, 'sawtooth', 0.08, -50), 160); }
+
+function shoutName() {
+  if (typeof speechSynthesis === 'undefined') return;
+  const now = Date.now();
+  if (now - lastVoiceTime < 3000) return;
+  lastVoiceTime = now;
+
+  let tier = PANIC_LINES[0];
+  for (let i = PANIC_LINES.length - 1; i >= 0; i--) {
+    if (panicLevel >= PANIC_LINES[i].threshold) { tier = PANIC_LINES[i]; break; }
+  }
+
+  const line = tier.lines[Math.floor(Math.random() * tier.lines.length)].replace(/\{NAME\}/g, dogName);
+  const utter = new SpeechSynthesisUtterance(line);
+  const voices = speechSynthesis.getVoices();
+  const britishVoice = voices.find(v => v.lang.includes('en-GB')) || voices.find(v => v.lang.includes('en'));
+  if (britishVoice) utter.voice = britishVoice;
+  utter.rate = tier.rate;
+  utter.pitch = tier.pitch;
+  utter.volume = Math.min(1, 0.6 + panicLevel / 150);
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
+
+// ==================== RESIZE ====================
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ==================== UTILITY ====================
+function lerp(a, b, t) { return a + (b - a) * t; }
+function rand(min, max) { return Math.random() * (max - min) + min; }
+function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+function addShake(amount, dur=0.2) { shakeDuration = dur; shakeX = rand(-amount, amount); shakeY = rand(-amount, amount); }
+
+function spawnParticles(x, y, color, count=8, speed=3, life=0.6) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 / count) * i + rand(-0.3, 0.3);
+    particles.push({
+      x, y, vx: Math.cos(angle) * rand(speed*0.5, speed),
+      vy: Math.sin(angle) * rand(speed*0.5, speed),
+      life, maxLife: life, size: rand(2, 5), color
+    });
+  }
+}
+
+function spawnFloatText(x, y, text, color='#FFD93D') {
+  floatTexts.push({ x, y, text, color, life: 1.2, maxLife: 1.2 });
+}
+
+function showCombo(text) {
+  const el = document.getElementById('comboDisplay');
+  el.textContent = text;
+  el.style.opacity = '1';
+  el.style.transform = 'translate(-50%,-50%) scale(1.5)';
+  el.style.transition = 'none';
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.8s, transform 0.8s';
+    el.style.opacity = '0';
+    el.style.transform = 'translate(-50%,-50%) scale(0.8)';
+  }, 50);
+}
+// ==================== DRAWING FUNCTIONS ====================
+
+function drawDog(x, y, breed, runPhase, isDashing) {
+  const b = BREEDS[breed];
+  const s = breed === 'terrier' ? 0.75 : breed === 'greyhound' ? 1.1 : 1.0;
+  const bobY = Math.sin(runPhase * 8) * 2;
+  const legPhase = runPhase * 8;
+
+  ctx.save();
+  ctx.translate(x, y + bobY);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath();
+  ctx.ellipse(0, 16*s, 14*s, 5*s, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Tail (wagging)
+  const tailWag = Math.sin(runPhase * 12) * 0.5;
+  ctx.save();
+  ctx.translate(-10*s, -4*s);
+  ctx.rotate(-0.8 + tailWag);
+  ctx.strokeStyle = b.color;
+  ctx.lineWidth = 3*s;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-6*s, -10*s, -4*s + Math.sin(runPhase*14)*3, -16*s);
+  ctx.stroke();
+  ctx.restore();
+
+  // Legs (animated)
+  const legOffset = 5*s;
+  ctx.strokeStyle = b.darkColor;
+  ctx.lineWidth = 3*s;
+  ctx.lineCap = 'round';
+  // Back legs
+  const bl1 = Math.sin(legPhase) * legOffset;
+  const bl2 = Math.sin(legPhase + Math.PI) * legOffset;
+  ctx.beginPath(); ctx.moveTo(-6*s, 8*s); ctx.lineTo(-6*s + bl1*0.3, 16*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-3*s, 8*s); ctx.lineTo(-3*s + bl2*0.3, 16*s); ctx.stroke();
+  // Front legs
+  const fl1 = Math.sin(legPhase + Math.PI) * legOffset;
+  const fl2 = Math.sin(legPhase) * legOffset;
+  ctx.beginPath(); ctx.moveTo(6*s, 6*s); ctx.lineTo(6*s + fl1*0.3, 16*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(9*s, 6*s); ctx.lineTo(9*s + fl2*0.3, 16*s); ctx.stroke();
+
+  // Body
+  ctx.fillStyle = b.color;
+  ctx.beginPath();
+  ctx.ellipse(0, 2*s, 14*s, 10*s, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Collar
+  ctx.strokeStyle = '#FF6B6B';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.arc(8*s, -2*s, 6*s, -0.3, Math.PI+0.3);
+  ctx.stroke();
+
+  // Head
+  ctx.fillStyle = b.color;
+  ctx.beginPath();
+  ctx.ellipse(12*s, -4*s, 9*s, 8*s, 0.1, 0, Math.PI*2);
+  ctx.fill();
+
+  // Ears
+  const earFlap = isDashing ? -0.6 : Math.sin(runPhase * 6) * 0.15;
+  ctx.fillStyle = b.earColor;
+  // Left ear
+  ctx.save();
+  ctx.translate(8*s, -10*s);
+  ctx.rotate(-0.3 + earFlap);
+  ctx.beginPath();
+  ctx.ellipse(0, -4*s, 4*s, 7*s, -0.2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+  // Right ear
+  ctx.save();
+  ctx.translate(14*s, -10*s);
+  ctx.rotate(0.2 + earFlap);
+  ctx.beginPath();
+  ctx.ellipse(0, -4*s, 4*s, 7*s, 0.2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  // Snout
+  ctx.fillStyle = b.darkColor;
+  ctx.beginPath();
+  ctx.ellipse(19*s, -2*s, 5*s, 4*s, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Nose
+  ctx.fillStyle = '#2c2c2c';
+  ctx.beginPath();
+  ctx.ellipse(23*s, -3*s, 2.5*s, 2*s, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.ellipse(15*s, -7*s, 3*s, 3.5*s, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#2c2c2c';
+  ctx.beginPath();
+  ctx.ellipse(16*s, -7*s, 1.8*s, 2*s, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(16.5*s, -8*s, 0.7*s, 0, Math.PI*2);
+  ctx.fill();
+
+  // Tongue (when running)
+  ctx.fillStyle = '#FF8888';
+  const tongueLen = 4 + Math.sin(runPhase * 10) * 2;
+  ctx.beginPath();
+  ctx.moveTo(20*s, 0);
+  ctx.quadraticCurveTo(22*s, tongueLen*s, 19*s, (tongueLen+2)*s);
+  ctx.quadraticCurveTo(17*s, tongueLen*s, 19*s, 0);
+  ctx.fill();
+
+  // Dash effect
+  if (isDashing) {
+    ctx.strokeStyle = 'rgba(255,217,61,0.4)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+      const lx = -18*s - i * 8;
+      const ly = rand(-8, 8)*s;
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.lineTo(lx - 12, ly);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawOwner(x, y, panicPct, runPhase) {
+  const s = 0.9;
+  const bobY = Math.sin(runPhase * 7) * 3;
+  ctx.save();
+  ctx.translate(x, y + bobY);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath();
+  ctx.ellipse(0, 30*s, 12*s, 5*s, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Legs
+  const legPhase = runPhase * 7;
+  ctx.strokeStyle = '#3D5A80';
+  ctx.lineWidth = 5*s;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-4*s, 10*s); ctx.lineTo(-4*s + Math.sin(legPhase)*8, 28*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(4*s, 10*s); ctx.lineTo(4*s + Math.sin(legPhase+Math.PI)*8, 28*s); ctx.stroke();
+
+  // Body
+  ctx.fillStyle = COLORS.owner;
+  ctx.beginPath();
+  ctx.roundRect(-10*s, -10*s, 20*s, 25*s, 5*s);
+  ctx.fill();
+
+  // Arms (waving frantically based on panic)
+  const armWave = panicPct > 50 ? Math.sin(runPhase * 14) * 0.8 : Math.sin(runPhase * 8) * 0.4;
+  ctx.strokeStyle = COLORS.owner;
+  ctx.lineWidth = 5*s;
+  // Left arm
+  ctx.save(); ctx.translate(-10*s, -4*s); ctx.rotate(-1.2 + armWave);
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-12*s, 0); ctx.stroke();
+  // Hand
+  ctx.fillStyle = COLORS.ownerSkin;
+  ctx.beginPath(); ctx.arc(-12*s, 0, 3*s, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  // Right arm - holding dangling lead
+  ctx.save(); ctx.translate(10*s, -4*s); ctx.rotate(1.0 - armWave*0.5);
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(12*s, 0); ctx.stroke();
+  ctx.fillStyle = COLORS.ownerSkin;
+  ctx.beginPath(); ctx.arc(12*s, 0, 3*s, 0, Math.PI*2); ctx.fill();
+  // Lead dangling
+  ctx.strokeStyle = '#FF6B6B';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(12*s, 2*s); ctx.quadraticCurveTo(14*s, 10*s, 10*s, 14*s); ctx.stroke();
+  ctx.restore();
+
+  // Head
+  const faceRed = panicPct > 60 ? Math.min(60, panicPct - 60) : 0;
+  const skinR = parseInt(COLORS.ownerSkin.slice(1,3), 16);
+  const skinG = Math.max(100, parseInt(COLORS.ownerSkin.slice(3,5), 16) - faceRed);
+  const skinB = Math.max(100, parseInt(COLORS.ownerSkin.slice(5,7), 16) - faceRed);
+  ctx.fillStyle = `rgb(${skinR},${skinG},${skinB})`;
+  ctx.beginPath();
+  ctx.ellipse(0, -18*s, 9*s, 10*s, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Hair
+  ctx.fillStyle = COLORS.ownerHair;
+  ctx.beginPath();
+  ctx.ellipse(0, -24*s, 10*s, 6*s, 0, 0, Math.PI);
+  ctx.fill();
+
+  // Eyes (widening with panic)
+  const eyeH = 2 + (panicPct / 50);
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(-3*s, -19*s, 2.5*s, eyeH*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(3*s, -19*s, 2.5*s, eyeH*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#2c2c2c';
+  ctx.beginPath(); ctx.arc(-3*s, -19*s, 1.5*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(3*s, -19*s, 1.5*s, 0, Math.PI*2); ctx.fill();
+
+  // Mouth (progressively more open)
+  ctx.fillStyle = '#c0392b';
+  if (panicPct > 40) {
+    const mouthOpen = (panicPct - 40) / 15;
+    ctx.beginPath();
+    ctx.ellipse(0, -12*s, 4*s, clamp(mouthOpen, 1, 4)*s, 0, 0, Math.PI*2);
+    ctx.fill();
+  } else {
+    ctx.strokeStyle = '#c0392b';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, -14*s, 3*s, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+  }
+
+  // Sweat drops at high panic
+  if (panicPct > 60) {
+    ctx.fillStyle = 'rgba(116,192,227,0.7)';
+    const sweatBob = Math.sin(runPhase * 10) * 2;
+    ctx.beginPath(); ctx.arc(-11*s, -20*s + sweatBob, 2*s, 0, Math.PI*2); ctx.fill();
+    if (panicPct > 80) {
+      ctx.beginPath(); ctx.arc(11*s, -18*s - sweatBob, 1.5*s, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawSquirrel(x, y, phase) {
+  ctx.save(); ctx.translate(x, y);
+  // Bushy tail
+  ctx.fillStyle = COLORS.squirrelLight;
+  ctx.beginPath();
+  ctx.ellipse(-6, -8, 5, 10, -0.3, 0, Math.PI*2);
+  ctx.fill();
+  // Body
+  ctx.fillStyle = COLORS.squirrel;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 6, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Head
+  ctx.beginPath();
+  ctx.arc(6, -3, 4, 0, Math.PI*2);
+  ctx.fill();
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(8, -4, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(8.5, -4, 0.8, 0, Math.PI*2); ctx.fill();
+  // Ears
+  ctx.fillStyle = COLORS.squirrel;
+  ctx.beginPath(); ctx.arc(4, -7, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(7, -6.5, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawDuck(x, y, phase) {
+  ctx.save(); ctx.translate(x, y);
+  const waddle = Math.sin(phase * 6) * 3;
+  ctx.rotate(waddle * 0.03);
+  // Body
+  ctx.fillStyle = COLORS.duck;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 8, 6, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Head
+  ctx.fillStyle = COLORS.duckHead;
+  ctx.beginPath();
+  ctx.arc(7, -4, 4.5, 0, Math.PI*2);
+  ctx.fill();
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(9, -5, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(9.5, -5, 0.8, 0, Math.PI*2); ctx.fill();
+  // Beak
+  ctx.fillStyle = COLORS.duckBeak;
+  ctx.beginPath();
+  ctx.moveTo(11, -4);
+  ctx.lineTo(15, -3);
+  ctx.lineTo(11, -2);
+  ctx.closePath();
+  ctx.fill();
+  // Wing
+  ctx.fillStyle = '#e8e8e8';
+  ctx.beginPath();
+  ctx.ellipse(-2, -1, 5, 3, -0.3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawDeer(x, y, phase) {
+  ctx.save(); ctx.translate(x, y);
+  const s = 1.3;
+  // Legs
+  ctx.strokeStyle = COLORS.deerDark;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  const lp = phase * 8;
+  ctx.beginPath(); ctx.moveTo(-6*s, 8*s); ctx.lineTo(-6*s+Math.sin(lp)*5, 18*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-2*s, 8*s); ctx.lineTo(-2*s+Math.sin(lp+Math.PI)*5, 18*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(6*s, 6*s); ctx.lineTo(6*s+Math.sin(lp+Math.PI)*5, 18*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(10*s, 6*s); ctx.lineTo(10*s+Math.sin(lp)*5, 18*s); ctx.stroke();
+  // Body
+  ctx.fillStyle = COLORS.deer;
+  ctx.beginPath();
+  ctx.ellipse(2*s, 2*s, 14*s, 9*s, 0, 0, Math.PI*2);
+  ctx.fill();
+  // White belly patch
+  ctx.fillStyle = '#F5F0E0';
+  ctx.beginPath();
+  ctx.ellipse(2*s, 6*s, 10*s, 4*s, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Neck + Head
+  ctx.fillStyle = COLORS.deer;
+  ctx.beginPath();
+  ctx.ellipse(14*s, -6*s, 6*s, 8*s, 0.3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(18*s, -12*s, 5*s, 5*s, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Antlers
+  ctx.strokeStyle = COLORS.deerAntler;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(16*s, -16*s); ctx.lineTo(12*s, -24*s); ctx.lineTo(9*s, -22*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12*s, -24*s); ctx.lineTo(14*s, -28*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(20*s, -16*s); ctx.lineTo(24*s, -24*s); ctx.lineTo(27*s, -22*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(24*s, -24*s); ctx.lineTo(22*s, -28*s); ctx.stroke();
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(20*s, -13*s, 2*s, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#2c2c2c';
+  ctx.beginPath(); ctx.arc(20.5*s, -13*s, 1.2*s, 0, Math.PI*2); ctx.fill();
+  // Nose
+  ctx.fillStyle = '#2c2c2c';
+  ctx.beginPath(); ctx.ellipse(22*s, -10*s, 2*s, 1.5*s, 0, 0, Math.PI*2); ctx.fill();
+  // Tail
+  ctx.fillStyle = '#F5F0E0';
+  ctx.beginPath();
+  ctx.ellipse(-12*s, -2*s, 3*s, 4*s, -0.3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawOtherDog(x, y, phase, color) {
+  ctx.save(); ctx.translate(x, y);
+  const s = 0.85;
+  // Simple cute dog
+  const bobY = Math.sin(phase * 8) * 1.5;
+  ctx.translate(0, bobY);
+  // Body
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 10*s, 7*s, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Head
+  ctx.beginPath();
+  ctx.arc(9*s, -4*s, 6*s, 0, Math.PI*2);
+  ctx.fill();
+  // Ears
+  ctx.beginPath();
+  ctx.ellipse(6*s, -9*s, 3*s, 5*s, -0.3, 0, Math.PI*2);
+  ctx.fill();
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(12*s, -5*s, 2*s, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(12.5*s, -5*s, 1.2*s, 0, Math.PI*2); ctx.fill();
+  // Nose
+  ctx.fillStyle = '#2c2c2c';
+  ctx.beginPath(); ctx.arc(14.5*s, -3*s, 2*s, 0, Math.PI*2); ctx.fill();
+  // Tail
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3*s;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-10*s, -2*s);
+  const tw = Math.sin(phase * 10) * 0.4;
+  ctx.quadraticCurveTo(-14*s, -8*s + tw*10, -12*s, -14*s);
+  ctx.stroke();
+  ctx.restore();
+}
+// ==================== TERRAIN & SCENERY ====================
+
+function generateScenery(startY, endY) {
+  for (let y = startY; y < endY; y += rand(80, 160)) {
+    // Trees on sides
+    if (Math.random() < 0.6) {
+      const side = Math.random() < 0.5 ? rand(20, 70) : rand(W - 70, W - 20);
+      scenery.push({ type:'tree', x:side, y, size:rand(15,25) });
+    }
+    // Bushes
+    if (Math.random() < 0.4) {
+      const side = Math.random() < 0.5 ? rand(10, 90) : rand(W - 90, W - 10);
+      scenery.push({ type:'bush', x:side, y, size:rand(8,16) });
+    }
+    // Flowers
+    if (Math.random() < 0.5) {
+      for (let f = 0; f < randInt(2,5); f++) {
+        const fx = rand(10, W-10);
+        const inPath = fx > W*0.25 && fx < W*0.75;
+        if (!inPath) {
+          scenery.push({ type:'flower', x:fx, y:y+rand(-20,20), color:[COLORS.flower1,COLORS.flower2,COLORS.flower3][randInt(0,2)], size:rand(2,4) });
+        }
+      }
+    }
+    // Pond sections
+    if (Math.random() < 0.12) {
+      scenery.push({ type:'pond', x:rand(W*0.15, W*0.85), y, w:rand(60,120), h:rand(40,70) });
+    }
+  }
+}
+
+function drawBackground(camY) {
+  // Sky gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#87CEEB');
+  grad.addColorStop(1, COLORS.grass1);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Grass stripes
+  ctx.fillStyle = COLORS.grass2;
+  const stripeH = 30;
+  const offset = camY % (stripeH * 2);
+  for (let y = -stripeH + offset; y < H + stripeH; y += stripeH * 2) {
+    ctx.fillRect(0, y, W, stripeH);
+  }
+
+  // Path
+  const pathW = W * 0.45;
+  const pathX = (W - pathW) / 2;
+  ctx.fillStyle = COLORS.pathEdge;
+  ctx.fillRect(pathX - 4, 0, pathW + 8, H);
+  ctx.fillStyle = COLORS.path;
+  ctx.fillRect(pathX, 0, pathW, H);
+  // Path center line (dashed)
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([10, 15]);
+  const dashOffset = camY % 25;
+  ctx.lineDashOffset = dashOffset;
+  ctx.beginPath();
+  ctx.moveTo(W/2, 0);
+  ctx.lineTo(W/2, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawSceneryItem(item, camY) {
+  const sy = item.y - camY;
+  if (sy < -60 || sy > H + 60) return;
+
+  switch(item.type) {
+    case 'tree':
+      // Trunk
+      ctx.fillStyle = COLORS.trunk;
+      ctx.fillRect(item.x - 3, sy - 5, 6, 15);
+      // Canopy
+      ctx.fillStyle = COLORS.tree;
+      ctx.beginPath();
+      ctx.arc(item.x, sy - 12, item.size, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = COLORS.treeDark;
+      ctx.beginPath();
+      ctx.arc(item.x - 3, sy - 10, item.size * 0.6, 0, Math.PI*2);
+      ctx.fill();
+      break;
+    case 'bush':
+      ctx.fillStyle = COLORS.bush;
+      ctx.beginPath();
+      ctx.ellipse(item.x, sy, item.size, item.size * 0.65, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = COLORS.treeDark;
+      ctx.beginPath();
+      ctx.ellipse(item.x + 2, sy + 1, item.size * 0.5, item.size * 0.4, 0, 0, Math.PI*2);
+      ctx.fill();
+      break;
+    case 'flower':
+      ctx.fillStyle = item.color;
+      ctx.beginPath();
+      ctx.arc(item.x, sy, item.size, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#FFD93D';
+      ctx.beginPath();
+      ctx.arc(item.x, sy, item.size * 0.4, 0, Math.PI*2);
+      ctx.fill();
+      break;
+    case 'pond':
+      ctx.fillStyle = COLORS.water;
+      ctx.beginPath();
+      ctx.ellipse(item.x, sy, item.w/2, item.h/2, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = COLORS.waterDeep;
+      ctx.beginPath();
+      ctx.ellipse(item.x + 5, sy + 3, item.w/3, item.h/3, 0, 0, Math.PI*2);
+      ctx.fill();
+      // Shine
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.beginPath();
+      ctx.ellipse(item.x - item.w/5, sy - item.h/5, item.w/6, item.h/6, -0.3, 0, Math.PI*2);
+      ctx.fill();
+      break;
+  }
+}
+
+// ==================== OBSTACLE DRAWING ====================
+
+function drawObstacle(ob, camY) {
+  const sy = ob.y - camY;
+  if (sy < -50 || sy > H + 50) return;
+
+  switch(ob.type) {
+    case 'blanket':
+      // Checkered picnic blanket
+      const bw = 40, bh = 30;
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 4; c++) {
+          ctx.fillStyle = (r + c) % 2 === 0 ? COLORS.blanket1 : COLORS.blanket2;
+          ctx.fillRect(ob.x - bw/2 + c*10, sy - bh/2 + r*10, 10, 10);
+        }
+      }
+      // Basket
+      ctx.fillStyle = '#8B6914';
+      ctx.beginPath();
+      ctx.arc(ob.x + 12, sy - 8, 6, 0, Math.PI*2);
+      ctx.fill();
+      break;
+    case 'bench':
+      ctx.fillStyle = COLORS.bench;
+      ctx.fillRect(ob.x - 20, sy - 5, 40, 6);
+      ctx.fillRect(ob.x - 22, sy - 18, 4, 20);
+      ctx.fillRect(ob.x + 18, sy - 18, 4, 20);
+      ctx.fillStyle = '#6B5A42';
+      ctx.fillRect(ob.x - 20, sy - 15, 40, 4);
+      break;
+    case 'jogger':
+      // Simple stick figure jogger
+      const jb = Math.sin(gameTime * 8 + ob.phase) * 3;
+      ctx.save(); ctx.translate(ob.x, sy + jb);
+      // Body
+      ctx.fillStyle = ob.color;
+      ctx.beginPath(); ctx.roundRect(-5, -12, 10, 16, 3); ctx.fill();
+      // Head
+      ctx.fillStyle = COLORS.ownerSkin;
+      ctx.beginPath(); ctx.arc(0, -16, 5, 0, Math.PI*2); ctx.fill();
+      // Legs
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = 3; ctx.lineCap = 'round';
+      const jp = gameTime * 8 + ob.phase;
+      ctx.beginPath(); ctx.moveTo(-2, 4); ctx.lineTo(-2 + Math.sin(jp)*5, 14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(2, 4); ctx.lineTo(2 + Math.sin(jp+Math.PI)*5, 14); ctx.stroke();
+      ctx.restore();
+      break;
+    case 'cyclist':
+      const cb = Math.sin(gameTime * 6 + ob.phase);
+      ctx.save(); ctx.translate(ob.x, sy);
+      // Wheels
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(-8, 6, 7, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(8, 6, 7, 0, Math.PI*2); ctx.stroke();
+      // Frame
+      ctx.strokeStyle = ob.color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(-8, 6); ctx.lineTo(0, -4); ctx.lineTo(8, 6); ctx.moveTo(0, -4); ctx.lineTo(-4, -4);
+      ctx.stroke();
+      // Rider
+      ctx.fillStyle = COLORS.ownerSkin;
+      ctx.beginPath(); ctx.arc(0, -12, 5, 0, Math.PI*2); ctx.fill();
+      // Helmet
+      ctx.fillStyle = '#FFD93D';
+      ctx.beginPath(); ctx.arc(0, -14, 5, Math.PI, 0); ctx.fill();
+      ctx.restore();
+      break;
+  }
+}
+
+// ==================== PICKUP DRAWING ====================
+
+function drawPickup(p, camY) {
+  const sy = p.y - camY;
+  if (sy < -30 || sy > H + 30) return;
+  const bob = Math.sin(gameTime * 4 + p.x) * 3;
+  const glow = 0.3 + Math.sin(gameTime * 3) * 0.15;
+
+  ctx.save();
+  ctx.translate(p.x, sy + bob);
+
+  // Glow
+  ctx.fillStyle = `rgba(255,217,61,${glow})`;
+  ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI*2); ctx.fill();
+
+  switch(p.type) {
+    case 'bone':
+      ctx.fillStyle = COLORS.bone;
+      ctx.fillRect(-8, -2, 16, 4);
+      ctx.beginPath(); ctx.arc(-8, -2, 3, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-8, 2, 3, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(8, -2, 3, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(8, 2, 3, 0, Math.PI*2); ctx.fill();
+      break;
+    case 'ball':
+      ctx.fillStyle = COLORS.ball;
+      ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(-1, -1, 4, -0.5, 1); ctx.stroke();
+      break;
+    case 'food':
+      // Drumstick
+      ctx.fillStyle = COLORS.food;
+      ctx.beginPath(); ctx.ellipse(0, 0, 7, 4, 0.3, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#F5F0E0';
+      ctx.fillRect(6, -1.5, 6, 3);
+      ctx.beginPath(); ctx.arc(12, 0, 2.5, 0, Math.PI*2); ctx.fill();
+      break;
+  }
+  ctx.restore();
+}
+// ==================== GAME INITIALIZATION ====================
+
+function initGame() {
+  const breed = BREEDS[selectedBreed];
+  dogName = document.getElementById('dogNameInput').value.trim().toUpperCase() || 'FENTON';
+
+  dog = {
+    x: W / 2, y: 0,
+    targetX: W / 2,
+    speed: 3 * breed.speed,
+    agility: breed.agility,
+    stamina: breed.stamina,
+    breed: selectedBreed,
+    runPhase: 0,
+    radius: 15
+  };
+
+  camera = { y: 0 };
+  dog.y = camera.y + H * 0.65;
+  owner = { y: dog.y + H * 0.55, baseOffset: H * 0.55, catchSpeed: 0 };
+
+  animals = [];
+  obstacles = [];
+  pickups = [];
+  particles = [];
+  floatTexts = [];
+  scenery = [];
+
+  score = 0;
+  distance = 0;
+  chaosPoints = 0;
+  animalsCaught = 0;
+  combo = 0;
+  comboTimer = 0;
+  panicLevel = 0;
+  gameSpeed = 2.5;
+  spawnTimer = 0;
+  difficultyTimer = 0;
+  shakeX = 0; shakeY = 0; shakeDuration = 0;
+  dashCooldown = 0;
+  dashActive = false;
+  dashTimer = 0;
+  gameTime = 0;
+  lastVoiceTime = 0;
+
+  generateScenery(camera.y - H, camera.y + H * 3);
+}
+
+function selectBreed(el) {
+  document.querySelectorAll('.breed-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedBreed = el.dataset.breed;
+}
+
+// ==================== SPAWNING ====================
+
+function spawnAnimal() {
+  const pathLeft = W * 0.15;
+  const pathRight = W * 0.85;
+  const spawnY = camera.y - 60;
+  const r = Math.random();
+
+  if (r < 0.40) {
+    // Squirrel - fast, zig-zag
+    animals.push({
+      type:'squirrel', x:rand(pathLeft, pathRight), y:spawnY,
+      vx:rand(-1.5, 1.5), vy:rand(0.5, 1.5),
+      zigTimer:0, zigInterval:rand(0.5, 1.2),
+      points:50, radius:10, phase:rand(0, Math.PI*2),
+      alive:true
+    });
+  } else if (r < 0.65) {
+    // Duck - near ponds, waddles
+    animals.push({
+      type:'duck', x:rand(pathLeft, pathRight), y:spawnY,
+      vx:rand(-0.8, 0.8), vy:rand(0.3, 1),
+      points:75, radius:12, phase:rand(0, Math.PI*2),
+      alive:true
+    });
+  } else if (r < 0.82) {
+    // Other dog - unpredictable
+    const dogColors = ['#D2691E','#DAA520','#C0C0C0','#2F2F2F','#F5F5DC'];
+    animals.push({
+      type:'dog', x:rand(pathLeft, pathRight), y:spawnY,
+      vx:rand(-1, 1), vy:rand(0.2, 1.2),
+      dirTimer:0, dirInterval:rand(0.8, 2),
+      points:80, radius:13, phase:rand(0, Math.PI*2),
+      color:dogColors[randInt(0, dogColors.length-1)],
+      alive:true
+    });
+  } else {
+    // Deer - rare, fast, big score
+    animals.push({
+      type:'deer', x:rand(pathLeft + 30, pathRight - 30), y:spawnY,
+      vx:rand(-0.5, 0.5), vy: -0.5,
+      points:200, radius:20, phase:rand(0, Math.PI*2),
+      spotted:false, fleeSpeed:4,
+      alive:true
+    });
+  }
+}
+
+function spawnObstacle() {
+  const pathLeft = W * 0.2;
+  const pathRight = W * 0.8;
+  const spawnY = camera.y - 60;
+  const r = Math.random();
+
+  if (r < 0.3) {
+    obstacles.push({
+      type:'blanket', x:rand(pathLeft, pathRight), y:spawnY,
+      w:40, h:30, radius:20
+    });
+  } else if (r < 0.5) {
+    obstacles.push({
+      type:'bench', x: Math.random() < 0.5 ? pathLeft - 10 : pathRight + 10, y:spawnY,
+      w:40, h:20, radius:18
+    });
+  } else if (r < 0.75) {
+    const joggerColors = ['#4A90D9','#E74C3C','#2ECC71','#9B59B6'];
+    obstacles.push({
+      type:'jogger', x:rand(pathLeft, pathRight), y:spawnY,
+      vx:rand(-0.5, 0.5), vy:rand(0.8, 1.5),
+      w:10, h:24, radius:12, phase:rand(0, 10),
+      color:joggerColors[randInt(0, joggerColors.length-1)]
+    });
+  } else {
+    const bikeColors = ['#E74C3C','#3498DB','#2ECC71','#F39C12'];
+    obstacles.push({
+      type:'cyclist', x: Math.random() < 0.5 ? -20 : W + 20, y:spawnY + rand(0, H*0.5),
+      vx: (Math.random() < 0.5 ? 1 : -1) * rand(2, 4), vy:0,
+      w:20, h:16, radius:14, phase:rand(0, 10),
+      color:bikeColors[randInt(0, bikeColors.length-1)]
+    });
+  }
+}
+
+function spawnPickup() {
+  const pathLeft = W * 0.2;
+  const pathRight = W * 0.8;
+  const spawnY = camera.y - 60;
+  const r = Math.random();
+
+  const type = r < 0.4 ? 'bone' : r < 0.7 ? 'ball' : 'food';
+  pickups.push({
+    type, x:rand(pathLeft, pathRight), y:spawnY, radius:10, alive:true
+  });
+}
+
+// ==================== UPDATE ====================
+
+function update(dt) {
+  if (state !== 'playing') return;
+  gameTime += dt;
+
+  // Game speed increases over time
+  difficultyTimer += dt;
+  if (difficultyTimer > 0.5) {
+    difficultyTimer = 0;
+    gameSpeed = Math.min(8, 2.5 + distance / 800);
+  }
+
+  const breed = BREEDS[selectedBreed];
+  const effectiveSpeed = gameSpeed * (dashActive ? 2.2 : 1);
+
+  // Move camera forward
+  camera.y -= effectiveSpeed;
+  distance += effectiveSpeed * 0.1;
+
+  // Score ticks with distance
+  score += effectiveSpeed * 0.5;
+
+  // Dog movement
+  const moveTarget = touchActive && touchX !== null ? touchX : (mouseX !== null ? mouseX : dog.targetX);
+  dog.targetX = moveTarget;
+
+  const moveSpeed = 8 * breed.agility;
+  dog.x = lerp(dog.x, dog.targetX, moveSpeed * dt);
+  dog.x = clamp(dog.x, 25, W - 25);
+  dog.y = camera.y + H * 0.65;
+  dog.runPhase += dt * (dashActive ? 2 : 1);
+
+  // Keyboard movement
+  if (keys['ArrowLeft'] || keys['KeyA']) dog.targetX -= 300 * dt * breed.agility;
+  if (keys['ArrowRight'] || keys['KeyD']) dog.targetX += 300 * dt * breed.agility;
+  dog.targetX = clamp(dog.targetX, 25, W - 25);
+
+  // Dash
+  if (dashActive) {
+    dashTimer -= dt;
+    if (dashTimer <= 0) { dashActive = false; }
+    // Dash particles
+    if (Math.random() < 0.5) {
+      particles.push({
+        x: dog.x - 10, y: dog.y + rand(-5, 5),
+        vx: rand(-2, -0.5), vy: rand(-0.5, 0.5),
+        life: 0.3, maxLife: 0.3, size: rand(2, 4),
+        color: '#FFD93D'
+      });
+    }
+  }
+  if (dashCooldown > 0) dashCooldown -= dt;
+
+  // Owner follows
+  const ownerTargetY = dog.y + owner.baseOffset;
+  // Owner gets closer when panic is high
+  const closingRate = 0.3 + panicLevel / 200;
+  owner.baseOffset = Math.max(H * 0.25, owner.baseOffset - closingRate * dt * 0.5);
+  // But dashing pushes owner back
+  if (dashActive) owner.baseOffset = Math.min(H * 0.6, owner.baseOffset + dt * 30);
+  owner.y = lerp(owner.y, ownerTargetY, 2 * dt);
+  owner.x = lerp(owner.x || W/2, dog.x, 0.5 * dt);
+
+  // Panic level
+  panicLevel = clamp(panicLevel - dt * 2, 0, 100);
+  // Voice lines
+  if (panicLevel > 15 && Math.random() < dt * (0.15 + panicLevel / 200)) {
+    shoutName();
+  }
+
+  // Combo decay
+  if (comboTimer > 0) {
+    comboTimer -= dt;
+    if (comboTimer <= 0) combo = 0;
+  }
+
+  // Spawning
+  spawnTimer += dt;
+  const spawnRate = Math.max(0.4, 1.2 - distance / 2000);
+  if (spawnTimer > spawnRate) {
+    spawnTimer = 0;
+    if (Math.random() < 0.55) spawnAnimal();
+    if (Math.random() < 0.35) spawnObstacle();
+    if (Math.random() < 0.2) spawnPickup();
+  }
+
+  // Generate more scenery
+  const furthestScenery = scenery.length > 0 ? Math.min(...scenery.map(s => s.y)) : camera.y;
+  if (camera.y - H < furthestScenery + H) {
+    generateScenery(furthestScenery - H * 2, furthestScenery);
+  }
+
+  // Update animals
+  for (let a of animals) {
+    if (!a.alive) continue;
+    a.phase += dt;
+
+    switch(a.type) {
+      case 'squirrel':
+        a.zigTimer += dt;
+        if (a.zigTimer > a.zigInterval) {
+          a.zigTimer = 0;
+          a.vx = rand(-2.5, 2.5);
+          a.zigInterval = rand(0.3, 0.8);
+        }
+        // Flee from dog
+        if (dist(dog, a) < 80) {
+          const dx = a.x - dog.x;
+          a.vx += (dx > 0 ? 3 : -3) * dt * 10;
+          a.vy -= 2 * dt;
+        }
+        break;
+      case 'duck':
+        a.vx += rand(-0.5, 0.5) * dt;
+        if (dist(dog, a) < 100) {
+          a.vx += (a.x - dog.x) > 0 ? 1.5 * dt * 10 : -1.5 * dt * 10;
+        }
+        break;
+      case 'dog':
+        a.dirTimer += dt;
+        if (a.dirTimer > a.dirInterval) {
+          a.dirTimer = 0;
+          a.vx = rand(-2, 2);
+          a.vy = rand(-0.5, 1.5);
+          a.dirInterval = rand(0.5, 1.5);
+        }
+        break;
+      case 'deer':
+        if (!a.spotted && dist(dog, a) < 120) {
+          a.spotted = true;
+          a.vy = -a.fleeSpeed;
+          a.vx = rand(-1, 1);
+        }
+        if (a.spotted) {
+          a.vy -= dt * 2;
+        }
+        break;
+    }
+
+    a.x += a.vx * effectiveSpeed * 0.5;
+    a.y += a.vy * effectiveSpeed * 0.4;
+    a.x = clamp(a.x, 10, W - 10);
+
+    // Check catch (collision with dog)
+    if (dist(dog, a) < dog.radius + a.radius) {
+      a.alive = false;
+      animalsCaught++;
+      combo++;
+      comboTimer = 2;
+      const multiplier = Math.min(combo, 5);
+      const points = a.points * multiplier;
+      score += points;
+      chaosPoints += a.points;
+      panicLevel = clamp(panicLevel + 15 + (a.type === 'deer' ? 25 : 0), 0, 100);
+
+      spawnParticles(a.x, a.y - camera.y, '#FFD93D', 10, 4, 0.5);
+      spawnFloatText(a.x, a.y - camera.y, `+${points}`, '#FFD93D');
+
+      if (a.type === 'squirrel') sfx_catch();
+      else if (a.type === 'duck') sfx_quack();
+      else if (a.type === 'deer') { sfx_catch(); sfx_boost(); }
+      else sfx_bark();
+
+      if (combo >= 3) showCombo(`${combo}x COMBO!`);
+      if (a.type === 'deer') showCombo('🦌 THE DEEEEER!!');
+    }
+  }
+  animals = animals.filter(a => a.alive && a.y - camera.y < H + 100 && a.y > camera.y - H);
+
+  // Update obstacles
+  for (let ob of obstacles) {
+    if (ob.type === 'jogger') {
+      ob.x += ob.vx * effectiveSpeed * 0.3;
+      ob.y += ob.vy * effectiveSpeed * 0.3;
+    } else if (ob.type === 'cyclist') {
+      ob.x += ob.vx;
+    }
+
+    // Collision with dog
+    const obsy = ob.y - camera.y;
+    if (dist({ x:dog.x, y:dog.y - camera.y }, { x:ob.x, y:obsy }) < dog.radius + ob.radius - 4) {
+      if (!ob.hit) {
+        ob.hit = true;
+        sfx_hit();
+        addShake(6, 0.25);
+        owner.baseOffset -= 20; // Owner gets closer!
+        panicLevel = clamp(panicLevel + 8, 0, 100);
+        spawnParticles(dog.x, dog.y - camera.y, '#FF6B6B', 6, 2, 0.4);
+        spawnFloatText(dog.x, dog.y - camera.y - 20, 'OUCH!', '#FF6B6B');
+        // Temporary slow
+        gameSpeed = Math.max(1.5, gameSpeed - 0.5);
+      }
+    }
+  }
+  obstacles = obstacles.filter(ob => {
+    const sy = ob.y - camera.y;
+    const sx = ob.x;
+    return sy < H + 100 && sy > -100 && sx > -60 && sx < W + 60;
+  });
+
+  // Update pickups
+  for (let p of pickups) {
+    if (!p.alive) continue;
+    const psy = p.y - camera.y;
+    if (dist({ x:dog.x, y:dog.y - camera.y }, { x:p.x, y:psy }) < dog.radius + p.radius) {
+      p.alive = false;
+      sfx_pickup();
+      spawnParticles(p.x, psy, '#FFD93D', 8, 3, 0.4);
+      switch(p.type) {
+        case 'bone':
+          score += 100;
+          combo += 2;
+          comboTimer = 3;
+          spawnFloatText(p.x, psy, '+100 🦴', '#F5F5DC');
+          break;
+        case 'ball':
+          dashActive = true;
+          dashTimer = 1.5;
+          dashCooldown = 0;
+          sfx_boost();
+          spawnFloatText(p.x, psy, 'ZOOM! 🎾', '#9ACD32');
+          showCombo('🎾 FETCH!');
+          break;
+        case 'food':
+          score += 50;
+          owner.baseOffset = Math.min(H * 0.6, owner.baseOffset + 30);
+          spawnFloatText(p.x, psy, '+50 🍗', '#DAA520');
+          break;
+      }
+    }
+  }
+  pickups = pickups.filter(p => p.alive && p.y - camera.y < H + 50);
+
+  // Update particles
+  for (let p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= dt;
+    p.vx *= 0.96;
+    p.vy *= 0.96;
+  }
+  particles = particles.filter(p => p.life > 0);
+
+  // Update float texts
+  for (let ft of floatTexts) {
+    ft.y -= 40 * dt;
+    ft.life -= dt;
+  }
+  floatTexts = floatTexts.filter(ft => ft.life > 0);
+
+  // Screen shake
+  if (shakeDuration > 0) {
+    shakeDuration -= dt;
+    shakeX *= 0.9;
+    shakeY *= 0.9;
+  } else {
+    shakeX = 0; shakeY = 0;
+  }
+
+  // Clean up old scenery
+  scenery = scenery.filter(s => s.y < camera.y + H + 100);
+
+  // Check game over (owner catches dog)
+  if (owner.baseOffset < H * 0.26) {
+    gameOver();
+  }
+
+  // Update HUD
+  document.getElementById('hudScore').textContent = Math.floor(score);
+  document.getElementById('hudDistance').textContent = Math.floor(distance) + 'm';
+  const bar = document.getElementById('panicBar');
+  bar.style.width = panicLevel + '%';
+  bar.style.background = panicLevel < 30 ? '#6BCB77' : panicLevel < 60 ? '#FFD93D' : panicLevel < 80 ? '#FFA500' : '#FF6B6B';
+}
+// ==================== RENDER ====================
+
+function render() {
+  ctx.save();
+  ctx.translate(shakeX || 0, shakeY || 0);
+
+  if (state === 'menu' || !dog) {
+    // Just draw a nice park background for the menu
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#87CEEB');
+    grad.addColorStop(0.6, '#A0E7E5');
+    grad.addColorStop(1, '#6BCB77');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    
+    // Animated grass tufts on menu
+    const t = Date.now() / 1000;
+    for (let i = 0; i < 20; i++) {
+      const gx = (i * W/20) + Math.sin(t + i) * 5;
+      const gy = H * 0.7 + (i % 3) * 40;
+      ctx.fillStyle = '#5DBF6A';
+      ctx.beginPath();
+      ctx.ellipse(gx, gy, 8, 4, Math.sin(t * 2 + i) * 0.2, 0, Math.PI*2);
+      ctx.fill();
+    }
+    
+    ctx.restore();
+    return;
+  }
+
+  const camY = camera.y;
+
+  // Background
+  drawBackground(camY);
+
+  // Scenery (behind entities)
+  for (let s of scenery) {
+    drawSceneryItem(s, camY);
+  }
+
+  // Pickups
+  for (let p of pickups) {
+    if (p.alive) drawPickup(p, camY);
+  }
+
+  // Obstacles
+  for (let ob of obstacles) {
+    drawObstacle(ob, camY);
+  }
+
+  // Animals
+  for (let a of animals) {
+    if (!a.alive) continue;
+    const sy = a.y - camY;
+    if (sy < -50 || sy > H + 50) continue;
+    switch(a.type) {
+      case 'squirrel': drawSquirrel(a.x, sy, a.phase); break;
+      case 'duck': drawDuck(a.x, sy, a.phase); break;
+      case 'deer': drawDeer(a.x, sy, a.phase); break;
+      case 'dog': drawOtherDog(a.x, sy, a.phase, a.color); break;
+    }
+  }
+
+  // Dog (player)
+  drawDog(dog.x, dog.y - camY, dog.breed, dog.runPhase, dashActive);
+
+  // Owner
+  const ownerSY = owner.y - camY;
+  if (ownerSY < H + 50) {
+    drawOwner(owner.x || W/2, ownerSY, panicLevel, gameTime);
+  }
+
+  // Particles
+  for (let p of particles) {
+    const alpha = p.life / p.maxLife;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Float texts
+  for (let ft of floatTexts) {
+    const alpha = ft.life / ft.maxLife;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = ft.color;
+    ctx.font = `bold ${16 + (1 - alpha) * 8}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(ft.text, ft.x, ft.y);
+  }
+  ctx.globalAlpha = 1;
+
+  // Distance indicator arrows at top
+  if (state === 'playing' || state === 'gameover') {
+    // Indicators for off-screen animals
+    for (let a of animals) {
+      if (!a.alive) continue;
+      const sy = a.y - camY;
+      if (sy < 0) {
+        ctx.fillStyle = a.type === 'deer' ? '#FFD93D' : a.type === 'duck' ? '#74C0E3' : '#A0522D';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        const emoji = a.type === 'squirrel' ? '🐿️' : a.type === 'duck' ? '🦆' : a.type === 'deer' ? '🦌' : '🐕';
+        ctx.fillText('▼ ' + emoji, clamp(a.x, 20, W-20), 50);
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
+// ==================== GAME STATE MANAGEMENT ====================
+
+function startGame() {
+  ensureAudio();
+  if (typeof speechSynthesis !== 'undefined') speechSynthesis.getVoices();
+  initGame();
+  state = 'playing';
+  document.getElementById('menuScreen').classList.remove('active');
+  document.getElementById('gameOverScreen').classList.remove('active');
+  document.getElementById('hud').classList.add('active');
+}
+
+function gameOver() {
+  state = 'gameover';
+  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  document.getElementById('hud').classList.remove('active');
+
+  const finalScore = Math.floor(score);
+  const isHighScore = finalScore > highScore;
+  if (isHighScore) {
+    highScore = finalScore;
+    localStorage.setItem('unleashed_high', highScore.toString());
+  }
+
+  document.getElementById('goScore').textContent = finalScore;
+  document.getElementById('goDistance').textContent = Math.floor(distance) + 'm';
+  document.getElementById('goChaos').textContent = Math.floor(chaosPoints);
+  document.getElementById('goAnimals').textContent = animalsCaught;
+
+  // Chaos rating
+  let rating = CHAOS_RATINGS[0];
+  for (let r of CHAOS_RATINGS) {
+    if (chaosPoints >= r.min) rating = r;
+  }
+  const ratingEl = document.getElementById('chaosRating');
+  ratingEl.textContent = rating.label;
+  ratingEl.style.background = rating.color + '33';
+  ratingEl.style.color = rating.color;
+
+  // Subtitle
+  const subtitles = [
+    `Back on the lead... for now.`,
+    `${dogName} has been recaptured!`,
+    `The park will never be the same.`,
+    `${animalsCaught} animals will need therapy.`,
+    chaosPoints > 1000 ? `They're banning you from the park.` : `A good run, ${dogName}.`
+  ];
+  document.getElementById('goSubtitle').textContent = subtitles[randInt(0, subtitles.length - 1)];
+
+  const hsEl = document.getElementById('highScoreNote');
+  hsEl.style.display = isHighScore ? 'block' : 'none';
+
+  document.getElementById('gameOverScreen').classList.add('active');
+}
+
+function restartGame() {
+  startGame();
+}
+
+// ==================== INPUT ====================
+
+// Keyboard
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Space' && state === 'playing') {
+    e.preventDefault();
+    activateDash();
+  }
+  if (e.code === 'Space' && state === 'gameover') restartGame();
+  if (e.code === 'Enter' && state === 'menu') startGame();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+function activateDash() {
+  if (dashCooldown > 0 || dashActive) return;
+  dashActive = true;
+  dashTimer = 0.4;
+  dashCooldown = 1.5 * (1 / BREEDS[selectedBreed].stamina);
+  sfx_boost();
+  addShake(3, 0.15);
+}
+
+// Mouse
+canvas.addEventListener('mousemove', e => { mouseX = e.clientX; });
+canvas.addEventListener('mousedown', e => {
+  if (state === 'playing') activateDash();
+});
+canvas.addEventListener('mouseleave', () => { mouseX = null; });
+
+// Touch
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  touchX = t.clientX;
+  touchActive = true;
+  if (state === 'playing') {
+    // Double tap for dash
+    const now = Date.now();
+    if (now - (canvas._lastTap || 0) < 300) {
+      activateDash();
+    }
+    canvas._lastTap = now;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  touchX = e.touches[0].clientX;
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  touchActive = false;
+}, { passive: false });
+
+// ==================== MAIN LOOP ====================
+
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+
+  if (state === 'playing') {
+    update(dt);
+  }
+
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+// ==================== START ====================
+
+// Pre-load voices
+if (typeof speechSynthesis !== 'undefined') {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+}
+
+requestAnimationFrame(gameLoop);
+
+</script>
+</body>
+</html>

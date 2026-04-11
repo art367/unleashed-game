@@ -1684,16 +1684,13 @@ function update(dt) {
 
   // Panic level
   panicLevel = clamp(panicLevel - dt * 2, 0, 100);
-  // Voice lines
-  // Owner constantly calls out - more frantic as panic rises
-  // Always calling at minimum, screaming at max panic
-  // Owner constantly calls out - more frantic as panic rises
-  const shoutChance = 0.8 + panicLevel / 25; // 0.8 at calm -> 4.8 at max panic
+  // Voice lines - owner calls out occasionally (not constantly)
+  const shoutChance = 0.08 + panicLevel / 120; // 0.08 at calm -> ~0.9 at max panic - much less frequent
   if (Math.random() < dt * shoutChance) {
     shoutName();
   }
-  // Also force a shout every few seconds if nothing else triggered one
-  if (Date.now() - lastShoutTime > 3500) {
+  // Force a shout every 10-12 seconds if nothing else triggered one
+  if (Date.now() - lastShoutTime > 10000) {
     shoutName();
   }
 
@@ -2141,13 +2138,13 @@ function update(dt) {
       sfx_hit();
       addShake(10, 0.5);
       spawnParticles(dog.x, dog.y - camera.y, '#FF0000', 20, 6, 0.8);
-      showCombo('🚨 BUSTED! 🚨');
+      showCombo('🚨 GOT YA! 🚨');
       
-      // Park keeper shouts BUSTED! in a distinct deep authoritative voice
+      // Park keeper shouts "Got ya!" in a distinct deep authoritative voice
       if (typeof speechSynthesis !== 'undefined') {
         try {
           speechSynthesis.cancel();
-          const bustedUtter = new SpeechSynthesisUtterance('BUSTED! Got you, you naughty dog!');
+          const bustedUtter = new SpeechSynthesisUtterance('Got ya!');
           const voices = speechSynthesis.getVoices();
           // Pick a deep male voice - different from the owner
           const deepVoice = voices.find(v => v.lang.includes('en') && (v.name.toLowerCase().includes('daniel') || v.name.toLowerCase().includes('alex') || v.name.toLowerCase().includes('thomas'))) 
@@ -2168,7 +2165,7 @@ function update(dt) {
       
       // Big owner bonus for keeper catching the dog
       ownerScore += 200;
-      spawnFloatText(dog.x, dog.y - camera.y - 30, '👤+200 BUSTED!', '#4A90D9');
+      spawnFloatText(dog.x, dog.y - camera.y - 30, '👤+200 GOT YA!', '#4A90D9');
       
       gameOver();
       return;
@@ -2615,10 +2612,8 @@ function startGame() {
   state = 'playing';
   panicLevel = 12;
   startMusic();
-  // Owner immediately starts calling
-  setTimeout(() => { shoutName(); }, 400);
-  setTimeout(() => { shoutName(); }, 2500);
-  setTimeout(() => { shoutName(); }, 5000);
+  // Owner calls out once at the start, then occasionally
+  setTimeout(() => { shoutName(); }, 800);
   document.getElementById('menuScreen').classList.remove('active');
   document.getElementById('gameOverScreen').classList.remove('active');
   document.getElementById('hud').classList.add('active');
@@ -2626,7 +2621,7 @@ function startGame() {
 
 function gameOver() {
   state = 'gameover';
-  stopMusic();
+  // Music keeps playing through game over screen
   if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
   document.getElementById('hud').classList.remove('active');
 
@@ -2641,7 +2636,7 @@ function gameOver() {
   }
 
   // Title changes based on how game ended
-  document.getElementById('goTitle').textContent = caughtByKeeper ? 'BUSTED!' : 'CAUGHT!';
+  document.getElementById('goTitle').textContent = caughtByKeeper ? 'GOT YA!' : 'CAUGHT!';
   
   // Dog vs Owner scores
   document.getElementById('goScore').textContent = finalScore;
@@ -2816,6 +2811,13 @@ if (typeof speechSynthesis !== 'undefined') {
 }
 
 requestAnimationFrame(gameLoop);
+
+// Start music on page load (menu screen) - needs user interaction first
+document.addEventListener('click', function startMusicOnFirstClick() {
+  ensureAudio();
+  startMusic();
+  document.removeEventListener('click', startMusicOnFirstClick);
+}, { once: true });
 
 </script>
 </body>

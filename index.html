@@ -259,7 +259,7 @@ let dashCooldown, dashActive, dashTimer;
 let lastVoiceTime = 0;
 let lastShoutTime = 0;
 let ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
-let topShoutBanner = { text:'', timer:0, maxTimer:0 }; // Big visible shout at top of screen
+
 let gameTime = 0;
 
 // Input
@@ -391,7 +391,6 @@ function toggleMute() {
 }
 
 
-
 function sfx_poo() {
   // Comedic squelch
   playTone(80, 0.25, 'sine', 0.15, 30);
@@ -455,6 +454,23 @@ function getOwnerVoice() {
   }
 }
 
+let cachedVoice = null;
+let voicesLoaded = false;
+
+// Pre-cache voice on load and when voices change
+function cacheVoice() {
+  if (typeof speechSynthesis === 'undefined') return;
+  const voices = speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    voicesLoaded = true;
+    cachedVoice = getOwnerVoice();
+  }
+}
+if (typeof speechSynthesis !== 'undefined') {
+  speechSynthesis.onvoiceschanged = cacheVoice;
+  cacheVoice();
+}
+
 function speakLine(text, rate, pitch, priority) {
   if (typeof speechSynthesis === 'undefined') return;
   try {
@@ -466,26 +482,39 @@ function speakLine(text, rate, pitch, priority) {
 
     const doSpeak = function() {
       try {
+        // Refresh voice cache if needed
+        if (!cachedVoice) cacheVoice();
+
         const utter = new SpeechSynthesisUtterance(text);
-        const voice = getOwnerVoice();
-        if (voice) utter.voice = voice;
+        if (cachedVoice) utter.voice = cachedVoice;
         utter.rate = rate || 1.0;
         // Female voice gets slightly higher pitch
         utter.pitch = ownerGender === 'female' ? (pitch || 1.0) * 1.15 : (pitch || 1.0);
         utter.volume = 1.0;
         utter.lang = 'en-GB';
+
+        // Log for debugging (remove later if needed)
+        console.log('[VOICE] Speaking:', text);
+
         speechSynthesis.speak(utter);
 
         // Chrome bug: speech can pause indefinitely, resume it
         setTimeout(function() {
-          if (speechSynthesis.paused) speechSynthesis.resume();
+          if (speechSynthesis.paused) {
+            console.log('[VOICE] Resuming paused speech');
+            speechSynthesis.resume();
+          }
         }, 200);
-      } catch(e2) {}
+        // Second resume attempt
+        setTimeout(function() {
+          if (speechSynthesis.paused) speechSynthesis.resume();
+        }, 500);
+      } catch(e2) { console.log('[VOICE] Error:', e2); }
     };
 
     // Small delay after cancel helps Chrome actually play the next utterance
-    setTimeout(doSpeak, 50);
-  } catch(e) {}
+    setTimeout(doSpeak, 60);
+  } catch(e) { console.log('[VOICE] Outer error:', e); }
 }
 
 function shoutName() {
@@ -508,10 +537,6 @@ function shoutName() {
   ownerSpeechBubble.timer = 2.5;
   ownerSpeechBubble.maxTimer = 2.5;
 
-  // Also show big banner at top of screen so it's unmissable
-  topShoutBanner.text = line;
-  topShoutBanner.timer = 2.2;
-  topShoutBanner.maxTimer = 2.2;
 
   // Try speech synthesis with gender-appropriate voice
   speakLine(line, tier.rate, tier.pitch, true);  // high priority - don't get cancelled
@@ -1522,7 +1547,7 @@ function initGame() {
   lastVoiceTime = 0;
   lastShoutTime = 0;
   ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
-  topShoutBanner = { text:'', timer:0, maxTimer:0 };
+
 
   generateScenery(camera.y - H, camera.y + H * 3);
 }
@@ -1543,6 +1568,8 @@ function selectOwnerGender(el) {
   });
   el.classList.add('selected');
   ownerGender = el.dataset.gender;
+  cachedVoice = null; // Refresh voice for new gender
+  cacheVoice();
   if (ownerGender === 'male') {
     el.style.background = 'rgba(74,144,217,0.2)';
     el.style.borderColor = 'rgba(74,144,217,0.5)';
@@ -1742,7 +1769,7 @@ function update(dt) {
 
   // Speech bubble decay
   if (ownerSpeechBubble.timer > 0) ownerSpeechBubble.timer -= dt;
-  if (topShoutBanner.timer > 0) topShoutBanner.timer -= dt;
+
 
   // Combo decay
   if (comboTimer > 0) {
@@ -1783,9 +1810,8 @@ function update(dt) {
       ownerSpeechBubble.text = 'OH NO! PARK KEEPER!!';
       ownerSpeechBubble.timer = 2.5;
       ownerSpeechBubble.maxTimer = 2.5;
-      topShoutBanner.text = 'OH NO! PARK KEEPER!! ' + dogName + ' COME HERE!!';
-      topShoutBanner.timer = 2.5;
-      topShoutBanner.maxTimer = 2.5;
+
+
     }
   }
 
@@ -1907,9 +1933,7 @@ function update(dt) {
       ownerSpeechBubble.text = chosenShout;
       ownerSpeechBubble.timer = 2.5;
       ownerSpeechBubble.maxTimer = 2.5;
-      topShoutBanner.text = chosenShout;
-      topShoutBanner.timer = 2.2;
-      topShoutBanner.maxTimer = 2.2;
+
 
       // Speak it with gender-appropriate voice
       speakLine(chosenShout, panicLevel > 50 ? 1.3 : 1.0, panicLevel > 50 ? 1.4 : 1.1);
@@ -1945,7 +1969,7 @@ function update(dt) {
         ob.hit = true;
         sfx_hit();
         addShake(6, 0.25);
-        
+
         if (ob.type === 'jogger' || ob.type === 'cyclist') {
           humansHit++;
           // Human tries to help! Owner stress drops significantly
@@ -1953,11 +1977,11 @@ function update(dt) {
           owner.baseOffset = Math.min(H * 0.6, owner.baseOffset + 50); // Owner relaxes, slows right down
           spawnParticles(dog.x, dog.y - camera.y, '#6BCB77', 10, 3, 0.6);
           spawnFloatText(dog.x, dog.y - camera.y - 20, 'GRAB HIM!', '#6BCB77');
-          
+
           // Owner gets points for the assist attempt!
           ownerScore += 50;
           spawnFloatText(ob.x, dog.y - camera.y - 40, '👤+50', '#4A90D9');
-          
+
           // But... dog dodges and escapes! Panic comes back
           const escapePanic = panicLevel;
           setTimeout(() => {
@@ -1972,7 +1996,7 @@ function update(dt) {
               spawnFloatText(dog.x, dog.y - camera.y - 50, '🐕+30', '#FF6B6B');
             }
           }, 800);
-          
+
           // Show owner relief bubble
           const helpShouts = [
             'GRAB HIM! PLEASE!',
@@ -1983,9 +2007,9 @@ function update(dt) {
           ownerSpeechBubble.text = helpShouts[Math.floor(Math.random() * helpShouts.length)];
           ownerSpeechBubble.timer = 1.5;
           ownerSpeechBubble.maxTimer = 1.5;
-          topShoutBanner.text = ownerSpeechBubble.text;
-          topShoutBanner.timer = 1.5;
-          topShoutBanner.maxTimer = 1.5;
+          speakLine(ownerSpeechBubble.text, 1.1, 1.2);
+
+
         } else if (ob.type === 'blanket') {
           // Dog raids the picnic! Dog points!
           score += 80;
@@ -2004,9 +2028,8 @@ function update(dt) {
           ownerSpeechBubble.text = picnicShouts[Math.floor(Math.random() * picnicShouts.length)];
           ownerSpeechBubble.timer = 2.5;
           ownerSpeechBubble.maxTimer = 2.5;
-          topShoutBanner.text = ownerSpeechBubble.text;
-          topShoutBanner.timer = 2.2;
-          topShoutBanner.maxTimer = 2.2;
+
+
           speakLine(ownerSpeechBubble.text, 1.1, 1.3);
           lastVoiceTime = Date.now();
         } else {
@@ -2047,9 +2070,8 @@ function update(dt) {
           ownerSpeechBubble.text = 'GOOD ' + (ownerGender === 'female' ? 'GIRL' : 'BOY') + '! STAY!';
           ownerSpeechBubble.timer = 1.5;
           ownerSpeechBubble.maxTimer = 1.5;
-          topShoutBanner.text = ownerSpeechBubble.text;
-          topShoutBanner.timer = 1.5;
-          topShoutBanner.maxTimer = 1.5;
+
+
           // Brief slowdown
           dog.speed *= 0.6;
           setTimeout(() => { dog.speed = BREEDS[selectedBreed].speed; }, 800);
@@ -2065,9 +2087,8 @@ function update(dt) {
           ownerSpeechBubble.text = 'FETCH ' + dogName + '! COME!';
           ownerSpeechBubble.timer = 2.0;
           ownerSpeechBubble.maxTimer = 2.0;
-          topShoutBanner.text = ownerSpeechBubble.text;
-          topShoutBanner.timer = 2.0;
-          topShoutBanner.maxTimer = 2.0;
+
+
           // Dog slows down chasing ball
           dog.speed *= 0.5;
           setTimeout(() => { dog.speed = BREEDS[selectedBreed].speed; }, 1200);
@@ -2085,9 +2106,8 @@ function update(dt) {
             ownerSpeechBubble.text = dogName + '!! SPIT IT OUT!!';
             ownerSpeechBubble.timer = 2.0;
             ownerSpeechBubble.maxTimer = 2.0;
-            topShoutBanner.text = ownerSpeechBubble.text;
-            topShoutBanner.timer = 2.0;
-            topShoutBanner.maxTimer = 2.0;
+
+
           }
           break;
       }
@@ -2110,7 +2130,7 @@ function update(dt) {
       addShake(4, 0.2);
       spawnFloatText(dog.x, dog.y - camera.y - 20, 'SPLASH! 💦', '#74C0E3');
       showCombo('💦 SPLASH!!');
-      
+
       // Owner reacts to the pond
       const pondShouts = [
         'OH NO ' + dogName + '!! NOT THE POND!!',
@@ -2124,22 +2144,20 @@ function update(dt) {
       ownerSpeechBubble.text = pondShout;
       ownerSpeechBubble.timer = 2.5;
       ownerSpeechBubble.maxTimer = 2.5;
-      topShoutBanner.text = pondShout;
-      topShoutBanner.timer = 2.2;
-      topShoutBanner.maxTimer = 2.2;
-      
+
+
       speakLine(pondShout, 1.2, 1.3);
       lastVoiceTime = Date.now();
-      
+
       panicLevel = clamp(panicLevel + 12, 0, 100);
       score += 40;
       spawnFloatText(dog.x, dog.y - camera.y - 40, '🐕+40 SPLASH!', '#FF6B6B');
       hudDogFlash('SPLASH!');
-      
+
       // Slow dog briefly in water
       gameSpeed = Math.max(1.5, gameSpeed - 0.3);
       setTimeout(() => { if (state === 'playing') gameSpeed += 0.3; }, 500);
-      
+
       // Dog needs a wee up a tree after the pond!
       if (!dogWeeing && !dogPooing) {
         setTimeout(() => {
@@ -2163,9 +2181,8 @@ function update(dt) {
             ownerSpeechBubble.text = dogName + '!! NOT ON THE TREE!!';
             ownerSpeechBubble.timer = 2.5;
             ownerSpeechBubble.maxTimer = 2.5;
-            topShoutBanner.text = ownerSpeechBubble.text;
-            topShoutBanner.timer = 2.2;
-            topShoutBanner.maxTimer = 2.2;
+
+
             panicLevel = clamp(panicLevel + 8, 0, 100);
           }
         }, 600);
@@ -2182,14 +2199,14 @@ function update(dt) {
     if (!pk.alive) continue;
     pk.phase += dt;
     pk.patrolTimer += dt;
-    
+
     // Patrol side to side on the path
     if (pk.patrolTimer > rand(1.5, 3)) {
       pk.patrolTimer = 0;
       pk.patrolDir *= -1;
     }
     pk.vx = pk.patrolDir * 1.5;
-    
+
     // Move toward dog if close
     const dxk = dog.x - pk.x;
     const dyk = (dog.y) - pk.y;
@@ -2199,11 +2216,11 @@ function update(dt) {
       pk.vx += (dxk / distToD) * 2.5;
       pk.vy += (dyk / distToD) * 0.5;
     }
-    
+
     pk.x += pk.vx * effectiveSpeed * 0.3;
     pk.y += pk.vy * effectiveSpeed * 0.3;
     pk.x = clamp(pk.x, 20, W - 20);
-    
+
     // Collision with dog = GAME OVER!
     const pksy = pk.y - camera.y;
     if (dist({ x:dog.x, y:dog.y - camera.y }, { x:pk.x, y:pksy }) < dog.radius + pk.radius) {
@@ -2213,7 +2230,7 @@ function update(dt) {
       addShake(10, 0.5);
       spawnParticles(dog.x, dog.y - camera.y, '#FF0000', 20, 6, 0.8);
       showCombo('🚨 GOT YA! 🚨');
-      
+
       // Park keeper shouts "Got ya!" in a distinct deep authoritative voice
       if (typeof speechSynthesis !== 'undefined') {
         try {
@@ -2232,15 +2249,16 @@ function update(dt) {
           speechSynthesis.speak(bustedUtter);
         } catch(e) {}
       }
-      
+
       ownerSpeechBubble.text = 'Oh thank GOD! The keeper got ' + dogName + '!';
       ownerSpeechBubble.timer = 3.0;
       ownerSpeechBubble.maxTimer = 3.0;
-      
+      speakLine(ownerSpeechBubble.text, 0.9, 1.0);
+
       // Big owner bonus for keeper catching the dog
       ownerScore += 200;
       spawnFloatText(dog.x, dog.y - camera.y - 30, '👤+200 GOT YA!', '#4A90D9');
-      
+
       gameOver();
       return;
     }
@@ -2283,14 +2301,14 @@ function update(dt) {
 
   // ==================== DOG POO MECHANIC ====================
   pooTimer -= dt;
-  
+
   if (pooTimer <= 0 && !dogPooing) {
     // Dog needs to poo! Starts squatting
     dogPooing = true;
     pooSquatTimer = 1.8; // squat for 1.8 seconds
     showCombo('💩 OH NO...');
     sfx_bark();
-    
+
     // Owner sees it coming
     ownerSpeechBubble.text = 'OH NO ' + dogName + '... NOT HERE!!';
     ownerSpeechBubble.timer = 2.0;
@@ -2298,18 +2316,18 @@ function update(dt) {
     speakLine('Oh no ' + dogName + '! Not here! Not now!', 1.1, 1.3);
     lastVoiceTime = Date.now();
   }
-  
+
   if (dogPooing) {
     pooSquatTimer -= dt;
     // Dog slows way down while pooing
     gameSpeed = Math.max(0.5, gameSpeed * 0.92);
-    
+
     if (pooSquatTimer <= 0) {
       // Poo dropped!
       dogPooing = false;
       pooTimer = rand(15, 28); // next poo in 15-28 seconds
       sfx_poo();
-      
+
       totalPoos++;
       poos.push({
         x: dog.x, y: dog.y,
@@ -2317,26 +2335,27 @@ function update(dt) {
         pickedUp: false,
         age: 0
       });
-      
+
       spawnParticles(dog.x, dog.y - camera.y, '#8B6914', 6, 2, 0.4);
       spawnFloatText(dog.x, dog.y - camera.y, '💩', '#8B6914');
       ownerScore += 30; // Dog slowing to poo = owner gains ground!
       spawnFloatText(dog.x, dog.y - camera.y - 20, '👤+30 POO STOP!', '#4A90D9');
       hudOwnerFlash('POO STOP!');
       panicLevel = clamp(panicLevel + 10, 0, 100);
-      
+
       ownerSpeechBubble.text = 'OH FOR GODS SAKE ' + dogName + '!!';
       ownerSpeechBubble.timer = 2.0;
       ownerSpeechBubble.maxTimer = 2.0;
+      speakLine(ownerSpeechBubble.text, 1.2, 1.3);
     }
   }
-  
+
   // ==================== DOG WEE MECHANIC ====================
   if (dogWeeing) {
     weeTimer -= dt;
     // Dog slows down to cock leg and wee
     gameSpeed = Math.max(0.3, gameSpeed * 0.9);
-    
+
     // Yellow particles (wee stream)
     if (Math.random() < 0.6) {
       const weeDir = weeTreeX > dog.x ? 1 : -1;
@@ -2347,13 +2366,13 @@ function update(dt) {
         color: '#FFD700'
       });
     }
-    
+
     if (weeTimer <= 0) {
       dogWeeing = false;
       ownerScore += 25; // Dog stopped to wee = owner catches up!
       spawnFloatText(dog.x, dog.y - camera.y, '👤+25 🌳💦 WEE STOP!', '#4A90D9');
       hudOwnerFlash('WEE STOP!');
-      
+
       const weeLines = [
         'Oh for GODS sake ' + dogName + '!',
         'EVERY. SINGLE. TREE. ' + dogName + '!!',
@@ -2364,6 +2383,7 @@ function update(dt) {
       ownerSpeechBubble.text = weeLine;
       ownerSpeechBubble.timer = 2.0;
       ownerSpeechBubble.maxTimer = 2.0;
+      speakLine(weeLine, 1.1, 1.2);
     }
   }
 
@@ -2376,20 +2396,20 @@ function update(dt) {
       p.pickedUp = true;
       poosPickedUp++;
       sfx_bagPickup();
-      
+
       // Owner gets BIG points for picking up the poo - levels things out!
       const pooBonus = 80 + Math.floor(p.age * 5); // more points the older it is
       ownerScore += pooBonus;
       // Reduce dog score slightly
       score = Math.max(0, score - 30);
-      
+
       spawnParticles(p.x, p.worldY - camera.y, '#4A90D9', 8, 3, 0.5);
       spawnFloatText(p.x, p.worldY - camera.y, '🛍️ BAGGED!', '#4A90D9');
       spawnFloatText(p.x, p.worldY - camera.y - 22, '👤+' + pooBonus, '#4A90D9');
       spawnFloatText(p.x, p.worldY - camera.y - 44, '🐕-30', '#FF6B6B');
-      
+
       panicLevel = clamp(panicLevel - 15, 0, 100); // Owner calms down after being responsible
-      
+
       const bagLines = [
         'At least I have a bag...',
         'Good owners pick up!',
@@ -2399,6 +2419,7 @@ function update(dt) {
       ownerSpeechBubble.text = bagLines[Math.floor(Math.random() * bagLines.length)];
       ownerSpeechBubble.timer = 2.0;
       ownerSpeechBubble.maxTimer = 2.0;
+      speakLine(ownerSpeechBubble.text, 1.0, 1.1);
     }
   }
   poos = poos.filter(p => !p.pickedUp && p.worldY > camera.y - H);
@@ -2425,7 +2446,7 @@ function render() {
     grad.addColorStop(1, '#6BCB77');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
-    
+
     // Animated grass tufts on menu
     const t = Date.now() / 1000;
     for (let i = 0; i < 20; i++) {
@@ -2436,7 +2457,7 @@ function render() {
       ctx.ellipse(gx, gy, 8, 4, Math.sin(t * 2 + i) * 0.2, 0, Math.PI*2);
       ctx.fill();
     }
-    
+
     ctx.restore();
     return;
   }
@@ -2562,67 +2583,7 @@ function render() {
   if (ownerSY < H + 50) {
     drawOwner(owner.x || W/2, ownerSY, panicLevel, gameTime);
 
-    // Speech bubble
-    if (ownerSpeechBubble.timer > 0) {
-      const bubbleAlpha = Math.min(1, ownerSpeechBubble.timer / 0.5);
-      const bubbleScale = 0.8 + Math.min(0.2, (ownerSpeechBubble.maxTimer - ownerSpeechBubble.timer) * 2);
-      ctx.save();
-      ctx.globalAlpha = bubbleAlpha;
-      const bx = (owner.x || W/2);
-      const by = ownerSY - 55;
-      ctx.translate(bx, by);
-      ctx.scale(bubbleScale, bubbleScale);
 
-      // Measure text for bubble size - bigger for visibility
-      const fontSize = panicLevel > 60 ? 20 : panicLevel > 30 ? 18 : 15;
-      ctx.font = 'bold ' + fontSize + 'px "Segoe UI", system-ui, sans-serif';
-      const textW = ctx.measureText(ownerSpeechBubble.text).width;
-      const padX = 14, padY = 10;
-      const bw = textW + padX * 2;
-      const bh = fontSize + padY * 2;
-
-      // Shake at high panic
-      const shk = panicLevel > 50 ? Math.sin(gameTime * 30) * (panicLevel / 40) : 0;
-
-      // Bubble background
-      ctx.fillStyle = '#fff';
-      ctx.strokeStyle = panicLevel > 60 ? '#FF6B6B' : panicLevel > 30 ? '#FFD93D' : '#ccc';
-      ctx.lineWidth = panicLevel > 60 ? 3 : 2;
-      ctx.beginPath();
-      ctx.moveTo(-bw/2 + 8 + shk, -bh/2);
-      ctx.lineTo(bw/2 - 8 + shk, -bh/2);
-      ctx.quadraticCurveTo(bw/2 + shk, -bh/2, bw/2 + shk, -bh/2 + 8);
-      ctx.lineTo(bw/2 + shk, bh/2 - 8);
-      ctx.quadraticCurveTo(bw/2 + shk, bh/2, bw/2 - 8 + shk, bh/2);
-      // Pointer triangle
-      ctx.lineTo(8 + shk, bh/2);
-      ctx.lineTo(0, bh/2 + 10);
-      ctx.lineTo(-4 + shk, bh/2);
-      ctx.lineTo(-bw/2 + 8 + shk, bh/2);
-      ctx.quadraticCurveTo(-bw/2 + shk, bh/2, -bw/2 + shk, bh/2 - 8);
-      ctx.lineTo(-bw/2 + shk, -bh/2 + 8);
-      ctx.quadraticCurveTo(-bw/2 + shk, -bh/2, -bw/2 + 8 + shk, -bh/2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // Text - red at high panic
-      ctx.fillStyle = panicLevel > 60 ? '#cc0000' : panicLevel > 30 ? '#c0392b' : '#333';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(ownerSpeechBubble.text, shk, 0);
-
-      // Exclamation marks flying off at high panic
-      if (panicLevel > 70) {
-        ctx.fillStyle = '#FF6B6B';
-        ctx.font = 'bold 14px sans-serif';
-        const et = gameTime * 5;
-        ctx.fillText('!', bw/2 + 6 + Math.sin(et)*3, -bh/2 + Math.cos(et)*3);
-        ctx.fillText('!', -bw/2 - 6 + Math.cos(et)*3, -bh/2 + Math.sin(et)*3);
-      }
-
-      ctx.restore();
-    }
   }
 
   // Particles
@@ -2674,65 +2635,6 @@ function render() {
     }
   }
 
-  // ===== OWNER SHOUT BANNER at top of screen =====
-  if (topShoutBanner.timer > 0 && topShoutBanner.text) {
-    const banAlpha = Math.min(1, topShoutBanner.timer / 0.4);
-    const banEnter = Math.min(1, (topShoutBanner.maxTimer - topShoutBanner.timer) * 4);
-    ctx.save();
-    ctx.globalAlpha = banAlpha;
-
-    // Banner background - slides down from top
-    const banY = 80 + (1 - banEnter) * -60;
-    const banFontSize = panicLevel > 60 ? 26 : panicLevel > 30 ? 22 : 18;
-    ctx.font = 'bold ' + banFontSize + 'px "Segoe UI", system-ui, sans-serif';
-    const banTextW = ctx.measureText(topShoutBanner.text).width;
-    const banPadX = 24, banPadY = 14;
-    const banW = Math.min(W - 20, banTextW + banPadX * 2);
-    const banH = banFontSize + banPadY * 2;
-
-    // Shake effect at high panic
-    const banShk = panicLevel > 50 ? Math.sin(gameTime * 25) * (panicLevel / 30) : 0;
-
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.beginPath();
-    ctx.roundRect(W/2 - banW/2 + 2 + banShk, banY - banH/2 + 2, banW, banH, 14);
-    ctx.fill();
-
-    // Background - white with colored border based on panic
-    const banBorderColor = panicLevel > 60 ? '#FF3333' : panicLevel > 30 ? '#FF8800' : '#4A90D9';
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = banBorderColor;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.roundRect(W/2 - banW/2 + banShk, banY - banH/2, banW, banH, 14);
-    ctx.fill();
-    ctx.stroke();
-
-    // Owner emoji on left
-    ctx.font = '20px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(ownerGender === 'female' ? '👩' : '👨', W/2 - banW/2 + 22 + banShk, banY);
-
-    // Speech text
-    ctx.font = 'bold ' + banFontSize + 'px "Segoe UI", system-ui, sans-serif';
-    ctx.fillStyle = panicLevel > 60 ? '#cc0000' : panicLevel > 30 ? '#c0392b' : '#2c3e50';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(topShoutBanner.text, W/2 + 8 + banShk, banY);
-
-    // Exclamation effects at high panic
-    if (panicLevel > 60) {
-      ctx.fillStyle = '#FF3333';
-      ctx.font = 'bold 18px sans-serif';
-      const et = gameTime * 6;
-      ctx.fillText('❗', W/2 + banW/2 - 10 + Math.sin(et)*4 + banShk, banY - 6 + Math.cos(et)*3);
-      ctx.fillText('😱', W/2 - banW/2 + 2 + Math.cos(et)*3 + banShk, banY - 10 + Math.sin(et)*4);
-    }
-
-    ctx.restore();
-  }
 
   ctx.restore();
 }
@@ -2745,6 +2647,7 @@ function startGame() {
   if (typeof speechSynthesis !== 'undefined') {
     speechSynthesis.cancel();
     speechSynthesis.getVoices();
+    cacheVoice();
   }
   initGame();
   state = 'playing';
@@ -2753,12 +2656,13 @@ function startGame() {
   // Owner calls out right away - try multiple times to ensure it fires
   setTimeout(function() { shoutName(); }, 500);
   setTimeout(function() {
-    // If first shout didn't work (speech not ready), try again
-    if (topShoutBanner.timer <= 0) shoutName();
+    // Retry shout in case first one didn't fire (speech not ready yet)
+    lastShoutTime = 0;
+    shoutName();
   }, 1500);
   setTimeout(function() {
-    // Second callout a few seconds in
-    lastShoutTime = 0; // reset cooldown
+    // Third callout a few seconds in
+    lastShoutTime = 0;
     shoutName();
   }, 4000);
   document.getElementById('menuScreen').classList.remove('active');
@@ -2775,7 +2679,7 @@ function gameOver() {
   const finalScore = Math.floor(score);
   const finalOwner = Math.floor(ownerScore);
   const dogWon = finalScore > finalOwner;
-  
+
   const isHighScore = finalScore > highScore;
   if (isHighScore) {
     highScore = finalScore;
@@ -2784,15 +2688,15 @@ function gameOver() {
 
   // Title changes based on how game ended
   document.getElementById('goTitle').textContent = caughtByKeeper ? 'GOT YA!' : 'CAUGHT!';
-  
+
   // Dog vs Owner scores
   document.getElementById('goScore').textContent = finalScore;
   document.getElementById('goOwnerScore').textContent = finalOwner;
-  
+
   // Breed info under dog score
   const breedInfo = BREEDS[selectedBreed];
   document.getElementById('goBreedInfo').textContent = breedInfo.name + ' • ' + dogName;
-  
+
   // Owner info
   const pooRate = totalPoos > 0 ? Math.floor((poosPickedUp / totalPoos) * 100) : 100;
   document.getElementById('goOwnerInfo').textContent = (caughtByKeeper ? 'Keeper caught ' + dogName + '! ' : '') + pooRate + '% poo pickup rate';

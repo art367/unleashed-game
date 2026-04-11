@@ -181,7 +181,6 @@ let panicLevel, gameSpeed, spawnTimer, difficultyTimer;
 let shakeX, shakeY, shakeDuration;
 let dashCooldown, dashActive, dashTimer;
 let lastVoiceTime = 0;
-  ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
 let ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
 let gameTime = 0;
 
@@ -1312,6 +1311,7 @@ function initGame() {
   dashTimer = 0;
   gameTime = 0;
   lastVoiceTime = 0;
+  ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
 
   generateScenery(camera.y - H, camera.y + H * 3);
 }

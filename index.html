@@ -180,6 +180,8 @@ let panicLevel, gameSpeed, spawnTimer, difficultyTimer;
 let shakeX, shakeY, shakeDuration;
 let dashCooldown, dashActive, dashTimer;
 let lastVoiceTime = 0;
+  ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
+let ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
 let gameTime = 0;
 
 // Input
@@ -240,6 +242,11 @@ function shoutName() {
   utter.volume = 1.0;
   speechSynthesis.cancel();
   speechSynthesis.speak(utter);
+
+  // Show speech bubble
+  ownerSpeechBubble.text = line;
+  ownerSpeechBubble.timer = 2.0;
+  ownerSpeechBubble.maxTimer = 2.0;
 }
 
 // ==================== RESIZE ====================
@@ -425,7 +432,7 @@ function drawDog(x, y, breed, runPhase, isDashing) {
 }
 
 function drawOwner(x, y, panicPct, runPhase) {
-  const s = 0.9;
+  const s = 1.5;
   const bobY = Math.sin(runPhase * 7) * 3;
   ctx.save();
   ctx.translate(x, y + bobY);
@@ -555,42 +562,49 @@ function drawSquirrel(x, y, phase) {
 
 function drawDuck(x, y, phase) {
   ctx.save(); ctx.translate(x, y);
+  const s = 2.2;
   const waddle = Math.sin(phase * 6) * 3;
   ctx.rotate(waddle * 0.03);
   // Body
   ctx.fillStyle = COLORS.duck;
   ctx.beginPath();
-  ctx.ellipse(0, 0, 8, 6, 0, 0, Math.PI*2);
+  ctx.ellipse(0, 0, 8*s, 6*s, 0, 0, Math.PI*2);
   ctx.fill();
   // Head
   ctx.fillStyle = COLORS.duckHead;
   ctx.beginPath();
-  ctx.arc(7, -4, 4.5, 0, Math.PI*2);
+  ctx.arc(7*s, -4*s, 4.5*s, 0, Math.PI*2);
   ctx.fill();
   // Eye
   ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(9, -5, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(9*s, -5*s, 2*s, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = '#000';
-  ctx.beginPath(); ctx.arc(9.5, -5, 0.8, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(9.5*s, -5*s, 1.2*s, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(10*s, -5.5*s, 0.5*s, 0, Math.PI*2); ctx.fill();
   // Beak
   ctx.fillStyle = COLORS.duckBeak;
   ctx.beginPath();
-  ctx.moveTo(11, -4);
-  ctx.lineTo(15, -3);
-  ctx.lineTo(11, -2);
+  ctx.moveTo(11*s, -4*s);
+  ctx.lineTo(16*s, -3*s);
+  ctx.lineTo(11*s, -2*s);
   ctx.closePath();
   ctx.fill();
   // Wing
   ctx.fillStyle = '#e8e8e8';
   ctx.beginPath();
-  ctx.ellipse(-2, -1, 5, 3, -0.3, 0, Math.PI*2);
+  ctx.ellipse(-2*s, -1*s, 5*s, 3*s, -0.3, 0, Math.PI*2);
   ctx.fill();
+  // Feet
+  ctx.fillStyle = COLORS.duckBeak;
+  ctx.beginPath(); ctx.ellipse(-3*s, 5*s, 3*s, 1.2*s, -0.2, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(2*s, 5*s, 3*s, 1.2*s, 0.2, 0, Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
 function drawDeer(x, y, phase) {
   ctx.save(); ctx.translate(x, y);
-  const s = 1.3;
+  const s = 1.9;
   // Legs
   ctx.strokeStyle = COLORS.deerDark;
   ctx.lineWidth = 3;
@@ -643,7 +657,7 @@ function drawDeer(x, y, phase) {
 
 function drawOtherDog(x, y, phase, color) {
   ctx.save(); ctx.translate(x, y);
-  const s = 0.85;
+  const s = 1.6;
   // Simple cute dog
   const bobY = Math.sin(phase * 8) * 1.5;
   ctx.translate(0, bobY);
@@ -900,65 +914,89 @@ function drawObstacle(ob, camY) {
   switch(ob.type) {
     case 'blanket':
       // Checkered picnic blanket
-      const bw = 40, bh = 30;
+      const bw = 65, bh = 50;
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 4; c++) {
           ctx.fillStyle = (r + c) % 2 === 0 ? COLORS.blanket1 : COLORS.blanket2;
-          ctx.fillRect(ob.x - bw/2 + c*10, sy - bh/2 + r*10, 10, 10);
+          ctx.fillRect(ob.x - bw/2 + c*16, sy - bh/2 + r*16, 16, 16);
         }
       }
       // Basket
       ctx.fillStyle = '#8B6914';
       ctx.beginPath();
-      ctx.arc(ob.x + 12, sy - 8, 6, 0, Math.PI*2);
+      ctx.arc(ob.x + 20, sy - 14, 10, 0, Math.PI*2);
       ctx.fill();
       break;
     case 'bench':
       ctx.fillStyle = COLORS.bench;
-      ctx.fillRect(ob.x - 20, sy - 5, 40, 6);
-      ctx.fillRect(ob.x - 22, sy - 18, 4, 20);
-      ctx.fillRect(ob.x + 18, sy - 18, 4, 20);
+      ctx.fillRect(ob.x - 32, sy - 8, 64, 10);
+      ctx.fillRect(ob.x - 35, sy - 28, 6, 32);
+      ctx.fillRect(ob.x + 29, sy - 28, 6, 32);
       ctx.fillStyle = '#6B5A42';
-      ctx.fillRect(ob.x - 20, sy - 15, 40, 4);
+      ctx.fillRect(ob.x - 32, sy - 24, 64, 7);
       break;
     case 'jogger':
       // Simple stick figure jogger
+      const js = 1.8;
       const jb = Math.sin(gameTime * 8 + ob.phase) * 3;
       ctx.save(); ctx.translate(ob.x, sy + jb);
       // Body
       ctx.fillStyle = ob.color;
-      ctx.beginPath(); ctx.roundRect(-5, -12, 10, 16, 3); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(-5*js, -12*js, 10*js, 16*js, 3*js); ctx.fill();
       // Head
       ctx.fillStyle = COLORS.ownerSkin;
-      ctx.beginPath(); ctx.arc(0, -16, 5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, -16*js, 5*js, 0, Math.PI*2); ctx.fill();
+      // Hair
+      ctx.fillStyle = '#555';
+      ctx.beginPath(); ctx.arc(0, -18*js, 5*js, Math.PI, 0); ctx.fill();
       // Legs
       ctx.strokeStyle = '#555';
-      ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.lineWidth = 4*js; ctx.lineCap = 'round';
       const jp = gameTime * 8 + ob.phase;
-      ctx.beginPath(); ctx.moveTo(-2, 4); ctx.lineTo(-2 + Math.sin(jp)*5, 14); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(2, 4); ctx.lineTo(2 + Math.sin(jp+Math.PI)*5, 14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-2*js, 4*js); ctx.lineTo(-2*js + Math.sin(jp)*6*js, 16*js); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(2*js, 4*js); ctx.lineTo(2*js + Math.sin(jp+Math.PI)*6*js, 16*js); ctx.stroke();
+      // Arms
+      ctx.strokeStyle = COLORS.ownerSkin;
+      ctx.lineWidth = 3*js;
+      ctx.beginPath(); ctx.moveTo(-5*js, -6*js); ctx.lineTo(-10*js + Math.sin(jp)*3*js, 2*js); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(5*js, -6*js); ctx.lineTo(10*js + Math.sin(jp+Math.PI)*3*js, 2*js); ctx.stroke();
       ctx.restore();
       break;
     case 'cyclist':
+      const cs = 1.8;
       const cb = Math.sin(gameTime * 6 + ob.phase);
       ctx.save(); ctx.translate(ob.x, sy);
       // Wheels
       ctx.strokeStyle = '#555';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(-8, 6, 7, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(8, 6, 7, 0, Math.PI*2); ctx.stroke();
+      ctx.lineWidth = 2.5*cs;
+      ctx.beginPath(); ctx.arc(-8*cs, 6*cs, 7*cs, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(8*cs, 6*cs, 7*cs, 0, Math.PI*2); ctx.stroke();
+      // Spokes
+      ctx.lineWidth = 1;
+      for (let wh of [-8*cs, 8*cs]) {
+        for (let a = 0; a < 4; a++) {
+          const ang = a * Math.PI/4 + gameTime*3;
+          ctx.beginPath();
+          ctx.moveTo(wh, 6*cs);
+          ctx.lineTo(wh + Math.cos(ang)*6*cs, 6*cs + Math.sin(ang)*6*cs);
+          ctx.stroke();
+        }
+      }
       // Frame
       ctx.strokeStyle = ob.color;
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 3*cs;
       ctx.beginPath();
-      ctx.moveTo(-8, 6); ctx.lineTo(0, -4); ctx.lineTo(8, 6); ctx.moveTo(0, -4); ctx.lineTo(-4, -4);
+      ctx.moveTo(-8*cs, 6*cs); ctx.lineTo(0, -4*cs); ctx.lineTo(8*cs, 6*cs); ctx.moveTo(0, -4*cs); ctx.lineTo(-4*cs, -4*cs);
       ctx.stroke();
-      // Rider
+      // Rider body
+      ctx.fillStyle = ob.color;
+      ctx.beginPath(); ctx.roundRect(-3*cs, -12*cs, 6*cs, 10*cs, 2*cs); ctx.fill();
+      // Rider head
       ctx.fillStyle = COLORS.ownerSkin;
-      ctx.beginPath(); ctx.arc(0, -12, 5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, -14*cs, 5*cs, 0, Math.PI*2); ctx.fill();
       // Helmet
       ctx.fillStyle = '#FFD93D';
-      ctx.beginPath(); ctx.arc(0, -14, 5, Math.PI, 0); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, -16*cs, 5.5*cs, Math.PI, 0); ctx.fill();
       ctx.restore();
       break;
   }
@@ -977,31 +1015,31 @@ function drawPickup(p, camY) {
 
   // Glow
   ctx.fillStyle = `rgba(255,217,61,${glow})`;
-  ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI*2); ctx.fill();
 
   switch(p.type) {
     case 'bone':
       ctx.fillStyle = COLORS.bone;
-      ctx.fillRect(-8, -2, 16, 4);
-      ctx.beginPath(); ctx.arc(-8, -2, 3, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(-8, 2, 3, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(8, -2, 3, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(8, 2, 3, 0, Math.PI*2); ctx.fill();
+      ctx.fillRect(-14, -3.5, 28, 7);
+      ctx.beginPath(); ctx.arc(-14, -3.5, 5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-14, 3.5, 5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(14, -3.5, 5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(14, 3.5, 5, 0, Math.PI*2); ctx.fill();
       break;
     case 'ball':
       ctx.fillStyle = COLORS.ball;
-      ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill();
       ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(-1, -1, 4, -0.5, 1); ctx.stroke();
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(-2, -2, 7, -0.5, 1); ctx.stroke();
       break;
     case 'food':
       // Drumstick
       ctx.fillStyle = COLORS.food;
-      ctx.beginPath(); ctx.ellipse(0, 0, 7, 4, 0.3, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, 0, 12, 7, 0.3, 0, Math.PI*2); ctx.fill();
       ctx.fillStyle = '#F5F0E0';
-      ctx.fillRect(6, -1.5, 6, 3);
-      ctx.beginPath(); ctx.arc(12, 0, 2.5, 0, Math.PI*2); ctx.fill();
+      ctx.fillRect(10, -2.5, 10, 5);
+      ctx.beginPath(); ctx.arc(20, 0, 4, 0, Math.PI*2); ctx.fill();
       break;
   }
   ctx.restore();
@@ -1076,7 +1114,7 @@ function spawnAnimal() {
       type:'squirrel', x:rand(pathLeft, pathRight), y:spawnY,
       vx:rand(-1.5, 1.5), vy:rand(0.5, 1.5),
       zigTimer:0, zigInterval:rand(0.5, 1.2),
-      points:50, radius:10, phase:rand(0, Math.PI*2),
+      points:50, radius:18, phase:rand(0, Math.PI*2),
       alive:true
     });
   } else if (r < 0.65) {
@@ -1084,7 +1122,7 @@ function spawnAnimal() {
     animals.push({
       type:'duck', x:rand(pathLeft, pathRight), y:spawnY,
       vx:rand(-0.8, 0.8), vy:rand(0.3, 1),
-      points:75, radius:12, phase:rand(0, Math.PI*2),
+      points:75, radius:20, phase:rand(0, Math.PI*2),
       alive:true
     });
   } else if (r < 0.82) {
@@ -1094,7 +1132,7 @@ function spawnAnimal() {
       type:'dog', x:rand(pathLeft, pathRight), y:spawnY,
       vx:rand(-1, 1), vy:rand(0.2, 1.2),
       dirTimer:0, dirInterval:rand(0.8, 2),
-      points:80, radius:13, phase:rand(0, Math.PI*2),
+      points:80, radius:22, phase:rand(0, Math.PI*2),
       color:dogColors[randInt(0, dogColors.length-1)],
       alive:true
     });
@@ -1103,7 +1141,7 @@ function spawnAnimal() {
     animals.push({
       type:'deer', x:rand(pathLeft + 30, pathRight - 30), y:spawnY,
       vx:rand(-0.5, 0.5), vy: -0.5,
-      points:200, radius:20, phase:rand(0, Math.PI*2),
+      points:200, radius:30, phase:rand(0, Math.PI*2),
       spotted:false, fleeSpeed:4,
       alive:true
     });
@@ -1121,19 +1159,19 @@ function spawnObstacle() {
   if (r < 0.3) {
     obstacles.push({
       type:'blanket', x:rand(pathLeft, pathRight), y:spawnY,
-      w:40, h:30, radius:20
+      w:65, h:50, radius:30
     });
   } else if (r < 0.5) {
     obstacles.push({
       type:'bench', x: Math.random() < 0.5 ? pathLeft - 10 : pathRight + 10, y:spawnY,
-      w:40, h:20, radius:18
+      w:64, h:32, radius:28
     });
   } else if (r < 0.75) {
     const joggerColors = ['#4A90D9','#E74C3C','#2ECC71','#9B59B6'];
     obstacles.push({
       type:'jogger', x:rand(pathLeft, pathRight), y:spawnY,
       vx:rand(-0.5, 0.5), vy:rand(0.8, 1.5),
-      w:10, h:24, radius:12, phase:rand(0, 10),
+      w:18, h:40, radius:22, phase:rand(0, 10),
       color:joggerColors[randInt(0, joggerColors.length-1)]
     });
   } else {
@@ -1141,7 +1179,7 @@ function spawnObstacle() {
     obstacles.push({
       type:'cyclist', x: Math.random() < 0.5 ? -20 : W + 20, y:spawnY + rand(0, H*0.5),
       vx: (Math.random() < 0.5 ? 1 : -1) * rand(2, 4), vy:0,
-      w:20, h:16, radius:14, phase:rand(0, 10),
+      w:36, h:28, radius:24, phase:rand(0, 10),
       color:bikeColors[randInt(0, bikeColors.length-1)]
     });
   }
@@ -1157,7 +1195,7 @@ function spawnPickup() {
 
   const type = r < 0.4 ? 'bone' : r < 0.7 ? 'ball' : 'food';
   pickups.push({
-    type, x:rand(pathLeft, pathRight), y:spawnY, radius:10, alive:true
+    type, x:rand(pathLeft, pathRight), y:spawnY, radius:16, alive:true
   });
 }
 
@@ -1236,6 +1274,9 @@ function update(dt) {
   if (panicLevel > 5 && Math.random() < dt * (0.4 + panicLevel / 80)) {
     shoutName();
   }
+
+  // Speech bubble decay
+  if (ownerSpeechBubble.timer > 0) ownerSpeechBubble.timer -= dt;
 
   // Combo decay
   if (comboTimer > 0) {
@@ -1511,6 +1552,68 @@ function render() {
   const ownerSY = owner.y - camY;
   if (ownerSY < H + 50) {
     drawOwner(owner.x || W/2, ownerSY, panicLevel, gameTime);
+
+    // Speech bubble
+    if (ownerSpeechBubble.timer > 0) {
+      const bubbleAlpha = Math.min(1, ownerSpeechBubble.timer / 0.5);
+      const bubbleScale = 0.8 + Math.min(0.2, (ownerSpeechBubble.maxTimer - ownerSpeechBubble.timer) * 2);
+      ctx.save();
+      ctx.globalAlpha = bubbleAlpha;
+      const bx = (owner.x || W/2);
+      const by = ownerSY - 55;
+      ctx.translate(bx, by);
+      ctx.scale(bubbleScale, bubbleScale);
+
+      // Measure text for bubble size
+      const fontSize = panicLevel > 60 ? 16 : panicLevel > 30 ? 14 : 12;
+      ctx.font = 'bold ' + fontSize + 'px "Segoe UI", system-ui, sans-serif';
+      const textW = ctx.measureText(ownerSpeechBubble.text).width;
+      const padX = 14, padY = 10;
+      const bw = textW + padX * 2;
+      const bh = fontSize + padY * 2;
+
+      // Shake at high panic
+      const shk = panicLevel > 50 ? Math.sin(gameTime * 30) * (panicLevel / 40) : 0;
+
+      // Bubble background
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = panicLevel > 60 ? '#FF6B6B' : panicLevel > 30 ? '#FFD93D' : '#ccc';
+      ctx.lineWidth = panicLevel > 60 ? 3 : 2;
+      ctx.beginPath();
+      ctx.moveTo(-bw/2 + 8 + shk, -bh/2);
+      ctx.lineTo(bw/2 - 8 + shk, -bh/2);
+      ctx.quadraticCurveTo(bw/2 + shk, -bh/2, bw/2 + shk, -bh/2 + 8);
+      ctx.lineTo(bw/2 + shk, bh/2 - 8);
+      ctx.quadraticCurveTo(bw/2 + shk, bh/2, bw/2 - 8 + shk, bh/2);
+      // Pointer triangle
+      ctx.lineTo(8 + shk, bh/2);
+      ctx.lineTo(0, bh/2 + 10);
+      ctx.lineTo(-4 + shk, bh/2);
+      ctx.lineTo(-bw/2 + 8 + shk, bh/2);
+      ctx.quadraticCurveTo(-bw/2 + shk, bh/2, -bw/2 + shk, bh/2 - 8);
+      ctx.lineTo(-bw/2 + shk, -bh/2 + 8);
+      ctx.quadraticCurveTo(-bw/2 + shk, -bh/2, -bw/2 + 8 + shk, -bh/2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Text - red at high panic
+      ctx.fillStyle = panicLevel > 60 ? '#cc0000' : panicLevel > 30 ? '#c0392b' : '#333';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ownerSpeechBubble.text, shk, 0);
+
+      // Exclamation marks flying off at high panic
+      if (panicLevel > 70) {
+        ctx.fillStyle = '#FF6B6B';
+        ctx.font = 'bold 14px sans-serif';
+        const et = gameTime * 5;
+        ctx.fillText('!', bw/2 + 6 + Math.sin(et)*3, -bh/2 + Math.cos(et)*3);
+        ctx.fillText('!', -bw/2 - 6 + Math.cos(et)*3, -bh/2 + Math.sin(et)*3);
+      }
+
+      ctx.restore();
+    }
   }
 
   // Particles

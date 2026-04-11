@@ -1706,13 +1706,13 @@ function update(dt) {
 
   // Panic level
   panicLevel = clamp(panicLevel - dt * 2, 0, 100);
-  // Voice lines - owner calls out occasionally (not constantly)
-  const shoutChance = 0.08 + panicLevel / 120; // 0.08 at calm -> ~0.9 at max panic - much less frequent
+  // Voice lines - owner calls out occasionally
+  const shoutChance = 0.25 + panicLevel / 50; // 0.25 at calm -> ~2.25 at max panic
   if (Math.random() < dt * shoutChance) {
     shoutName();
   }
-  // Force a shout every 10-12 seconds if nothing else triggered one
-  if (Date.now() - lastShoutTime > 10000) {
+  // Force a shout every 5-6 seconds if nothing else triggered one
+  if (Date.now() - lastShoutTime > 5000) {
     shoutName();
   }
 

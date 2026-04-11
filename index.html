@@ -1560,8 +1560,10 @@ function spawnObstacle() {
   const r = Math.random();
 
   if (r < 0.3) {
+    // Picnic blankets spawn OFF the path - on the grass beside the track
+    const blanketSide = Math.random() < 0.5 ? pathLeft - rand(40, 90) : pathRight + rand(40, 90);
     obstacles.push({
-      type:'blanket', x:rand(pathLeft, pathRight), y:spawnY,
+      type:'blanket', x:clamp(blanketSide, 30, W - 30), y:spawnY,
       w:80, h:60, radius:36
     });
   } else if (r < 0.5) {
@@ -1704,11 +1706,11 @@ function update(dt) {
     if (Math.random() < 0.2) spawnPickup();
   }
 
-  // Park keeper spawning - starts after 200m, gets more frequent
+  // Park keeper spawning - starts after 100m, gets more frequent
   parkKeeperSpawnTimer += dt;
-  if (distance > 200 && parkKeeperSpawnTimer > Math.max(4, 12 - distance / 300)) {
+  if (distance > 100 && parkKeeperSpawnTimer > Math.max(3, 8 - distance / 200)) {
     parkKeeperSpawnTimer = 0;
-    if (parkKeepers.length < 2 && Math.random() < 0.4) {
+    if (parkKeepers.length < 3 && Math.random() < 0.6) {
       const spawnY2 = camera.y - 80;
       const kx = getPathCenterX(spawnY2) + rand(-W*0.15, W*0.15);
       parkKeepers.push({
@@ -1969,18 +1971,34 @@ function update(dt) {
       spawnParticles(p.x, psy, '#FFD93D', 8, 3, 0.4);
       switch(p.type) {
         case 'bone':
-          score += 100;
-          combo += 2;
-          comboTimer = 3;
-          spawnFloatText(p.x, psy, '+100 🦴', '#F5F5DC');
+          // Bone is a distraction - owner gets points, dog slows briefly
+          ownerScore += 60;
+          spawnFloatText(p.x, psy, '👤+60 🦴 DISTRACTED!', '#4A90D9');
+          hudOwnerFlash('BONE!');
+          showCombo('🦴 GOOD ' + dogName + '!');
+          speakLine('Good ' + (ownerGender === 'female' ? 'girl' : 'boy') + '! Thats a good ' + dogName + '!', 1.0, 1.0);
+          lastVoiceTime = Date.now();
+          ownerSpeechBubble.text = 'GOOD ' + (ownerGender === 'female' ? 'GIRL' : 'BOY') + '! STAY!';
+          ownerSpeechBubble.timer = 1.5;
+          ownerSpeechBubble.maxTimer = 1.5;
+          // Brief slowdown
+          dog.speed *= 0.6;
+          setTimeout(() => { dog.speed = BREEDS[selectedBreed].speed; }, 800);
           break;
         case 'ball':
-          dashActive = true;
-          dashTimer = 1.5;
-          dashCooldown = 0;
-          sfx_boost();
-          spawnFloatText(p.x, psy, 'ZOOM! 🎾', '#9ACD32');
-          showCombo('🎾 FETCH!');
+          // Ball is a distraction - fetch! Owner gets points, dog pauses to fetch
+          ownerScore += 80;
+          spawnFloatText(p.x, psy, '👤+80 🎾 FETCH!', '#4A90D9');
+          hudOwnerFlash('FETCH!');
+          showCombo('🎾 FETCH BOY FETCH!');
+          speakLine(dogName + '! FETCH! Good ' + (ownerGender === 'female' ? 'girl' : 'boy') + '! BRING IT HERE!', 1.1, 1.1);
+          lastVoiceTime = Date.now();
+          ownerSpeechBubble.text = 'FETCH ' + dogName + '! COME!';
+          ownerSpeechBubble.timer = 2.0;
+          ownerSpeechBubble.maxTimer = 2.0;
+          // Dog slows down chasing ball
+          dog.speed *= 0.5;
+          setTimeout(() => { dog.speed = BREEDS[selectedBreed].speed; }, 1200);
           break;
         case 'food':
           ownerScore += 50;
@@ -2113,7 +2131,26 @@ function update(dt) {
       sfx_hit();
       addShake(10, 0.5);
       spawnParticles(dog.x, dog.y - camera.y, '#FF0000', 20, 6, 0.8);
-      showCombo('🚨 CAUGHT BY KEEPER! 🚨');
+      showCombo('🚨 BUSTED! 🚨');
+      
+      // Park keeper shouts BUSTED! in a distinct deep authoritative voice
+      if (typeof speechSynthesis !== 'undefined') {
+        try {
+          speechSynthesis.cancel();
+          const bustedUtter = new SpeechSynthesisUtterance('BUSTED! Got you, you naughty dog!');
+          const voices = speechSynthesis.getVoices();
+          // Pick a deep male voice - different from the owner
+          const deepVoice = voices.find(v => v.lang.includes('en') && (v.name.toLowerCase().includes('daniel') || v.name.toLowerCase().includes('alex') || v.name.toLowerCase().includes('thomas'))) 
+            || voices.find(v => v.lang.includes('en-GB') && v.name.toLowerCase().includes('male'))
+            || voices.find(v => v.lang.includes('en-GB'))
+            || voices.find(v => v.lang.includes('en'));
+          if (deepVoice) bustedUtter.voice = deepVoice;
+          bustedUtter.rate = 0.8;  // Slow and authoritative
+          bustedUtter.pitch = 0.6; // Deep voice
+          bustedUtter.volume = 1.0;
+          speechSynthesis.speak(bustedUtter);
+        } catch(e) {}
+      }
       
       ownerSpeechBubble.text = 'Oh thank GOD! The keeper got ' + dogName + '!';
       ownerSpeechBubble.timer = 3.0;
@@ -2121,7 +2158,7 @@ function update(dt) {
       
       // Big owner bonus for keeper catching the dog
       ownerScore += 200;
-      spawnFloatText(dog.x, dog.y - camera.y - 30, '👤+200 KEEPER CATCH!', '#4A90D9');
+      spawnFloatText(dog.x, dog.y - camera.y - 30, '👤+200 BUSTED!', '#4A90D9');
       
       gameOver();
       return;
@@ -2673,20 +2710,11 @@ function gameOver() {
   const hsEl = document.getElementById('highScoreNote');
   hsEl.style.display = isHighScore ? 'block' : 'none';
 
-  // Play a final voice line
-  if (typeof speechSynthesis !== 'undefined') {
-    try {
-      const finalLine = dogWon 
-        ? 'I am never bringing ' + dogName + ' to this park again!'
-        : 'Right. ' + dogName + '. You are going straight in the car.';
-      const utter = new SpeechSynthesisUtterance(finalLine);
-      const voices = speechSynthesis.getVoices();
-      const bv = voices.find(v => v.lang.includes('en-GB')) || voices.find(v => v.lang.includes('en'));
-      if (bv) utter.voice = bv;
-      utter.rate = 0.9; utter.pitch = 1.0; utter.volume = 1.0;
-      setTimeout(() => { try { speechSynthesis.speak(utter); } catch(e) {} }, 500);
-    } catch(e) {}
-  }
+  // Play the final owner voice line after a short delay (let keeper BUSTED! finish first)
+  setTimeout(() => {
+    const finalLine = 'I am NEVER taking ' + dogName + ' to the park again!';
+    speakLine(finalLine, 0.85, 1.1);
+  }, caughtByKeeper ? 2500 : 800);
 
   document.getElementById('gameOverScreen').classList.add('active');
 }

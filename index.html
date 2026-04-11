@@ -266,171 +266,163 @@ function sfx_quack() { playTone(250, 0.2, 'sawtooth', 0.35, 100); setTimeout(() 
 
 // ==================== MUSIC SYSTEM ====================
 let musicPlaying = false;
-let musicInterval = null;
-let musicBeat = 0;
-let musicBPM = 140;
+let musicNodes = []; // active audio nodes
+let musicLoop = null;
 
-// Lo-fi park chase - cheerful major key, breezy and fun
-const PARK_SCALE = [293.66, 329.63, 369.99, 415.30, 440.00, 493.88, 554.37, 587.33]; // D major bright
-const CHASE_SCALE = [293.66, 311.13, 349.23, 392.00, 440.00, 466.16, 523.25, 587.33]; // D minor urgent
-
-// Walking bass - bouncy like a dog trotting
-const BASS_PARK = [0, 4, 2, 5, 0, 3, 4, 2];
-const BASS_CHASE = [0, 0, 2, 2, 4, 4, 5, 3];
-
-// Melody patterns - playful gaps
-const MELODY_PARK = [1,0,0,1, 0,1,0,0, 1,0,1,0, 0,0,1,0];
-const MELODY_CHASE = [1,0,1,0, 1,0,1,1, 1,0,1,0, 1,1,0,1];
-
-function playMusicNote(freq, dur, type, vol, delay) {
-  if (!audioCtx) return;
+function createSmoothTone(freq, vol, type) {
+  if (!audioCtx) return null;
   try {
-    const t = audioCtx.currentTime + (delay || 0);
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t);
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(vol, t + 0.01);
-    g.gain.setValueAtTime(vol, t + dur * 0.7);
-    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    o.connect(g);
-    g.connect(audioCtx.destination);
-    o.start(t);
-    o.stop(t + dur);
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    return { osc, gain, targetVol: vol, freq };
+  } catch(e) { return null; }
+}
+
+function fadeNode(node, target, dur) {
+  if (!node || !node.gain) return;
+  try {
+    node.gain.gain.cancelScheduledValues(audioCtx.currentTime);
+    node.gain.gain.setValueAtTime(node.gain.gain.value, audioCtx.currentTime);
+    node.gain.gain.linearRampToValueAtTime(target, audioCtx.currentTime + dur);
   } catch(e) {}
 }
 
-function musicTick() {
-  if (!audioCtx || state !== 'playing') return;
+function stopNode(node, dur) {
+  if (!node) return;
+  fadeNode(node, 0, dur || 0.5);
+  setTimeout(() => {
+    try { node.osc.stop(); } catch(e) {}
+  }, (dur || 0.5) * 1000 + 100);
+}
+
+// Chord definitions - smooth jazz-y park vibes
+const CHORDS = [
+  [293.66, 369.99, 440.00], // D major
+  [329.63, 415.30, 493.88], // E major  
+  [261.63, 329.63, 392.00], // C major
+  [220.00, 277.18, 329.63], // A major
+];
+
+const CHORDS_TENSE = [
+  [293.66, 349.23, 440.00], // D minor
+  [261.63, 311.13, 392.00], // C minor
+  [246.94, 311.13, 369.99], // B minor-ish
+  [220.00, 261.63, 329.63], // A minor
+];
+
+let currentChord = 0;
+let padNodes = [];
+let bassNode = null;
+let melodyNode = null;
+let lastMelodyTime = 0;
+
+function musicUpdate() {
+  if (!audioCtx || !musicPlaying || state !== 'playing') return;
 
   const panic = panicLevel || 0;
   const intensity = clamp(panic / 100, 0, 1);
-
-  // BPM: breezy stroll that picks up into a chase
-  musicBPM = 105 + intensity * 35;
-  const beatDur = 60 / musicBPM;
-
-  const scale = intensity > 0.5 ? CHASE_SCALE : PARK_SCALE;
-  const bassPattern = intensity > 0.5 ? BASS_CHASE : BASS_PARK;
-  const melodyRhythm = intensity > 0.5 ? MELODY_CHASE : MELODY_PARK;
-
-  const beatInBar = musicBeat % 16;
-  const barBeat = musicBeat % 8;
-
-  // ---- PARK AMBIENCE PAD (birdsong-like shimmer) ----
-  if (beatInBar === 0) {
-    const padNote = scale[0] / 2;
-    playMusicNote(padNote, beatDur * 14, 'sine', 0.02, 0);
-    playMusicNote(padNote * 1.5, beatDur * 14, 'sine', 0.012, 0);
-    // Major third for brightness
-    playMusicNote(padNote * 1.25, beatDur * 14, 'sine', 0.008, 0);
-  }
-
-  // ---- BOUNCY BASS (trotting rhythm) ----
-  if (beatInBar % 2 === 0) {
-    const bassIdx = bassPattern[barBeat % bassPattern.length];
-    const bassNote = scale[clamp(bassIdx, 0, scale.length - 1)] / 2;
-    const bassVol = 0.04 + intensity * 0.02;
-    playMusicNote(bassNote, beatDur * 1.5, 'triangle', bassVol, 0);
-    // Ghost note for bounce feel
-    if (beatInBar % 4 === 2) {
-      playMusicNote(bassNote * 1.5, beatDur * 0.3, 'sine', bassVol * 0.3, beatDur * 0.3);
+  const chords = intensity > 0.5 ? CHORDS_TENSE : CHORDS;
+  
+  // Rotate chord every ~4 seconds
+  const now = audioCtx.currentTime;
+  
+  // ---- WARM PAD LAYER (always on, smooth crossfade between chords) ----
+  const chord = chords[currentChord % chords.length];
+  
+  // Update existing pad notes or create them
+  if (padNodes.length === 0) {
+    // Create 3 pad voices + sub bass
+    for (let i = 0; i < 3; i++) {
+      const n = createSmoothTone(chord[i] / 2, 0.02, 'sine');
+      if (n) { fadeNode(n, 0.02, 2); padNodes.push(n); }
+    }
+    // Sub bass
+    bassNode = createSmoothTone(chord[0] / 4, 0, 'sine');
+    if (bassNode) fadeNode(bassNode, 0.03, 2);
+  } else {
+    // Smoothly glide to new chord notes
+    const vol = 0.015 + intensity * 0.008;
+    for (let i = 0; i < padNodes.length && i < chord.length; i++) {
+      if (padNodes[i] && padNodes[i].osc) {
+        try {
+          padNodes[i].osc.frequency.cancelScheduledValues(now);
+          padNodes[i].osc.frequency.setValueAtTime(padNodes[i].osc.frequency.value, now);
+          padNodes[i].osc.frequency.linearRampToValueAtTime(chord[i] / 2, now + 2.0);
+          fadeNode(padNodes[i], vol, 1.5);
+        } catch(e) {}
+      }
+    }
+    // Glide bass
+    if (bassNode && bassNode.osc) {
+      try {
+        bassNode.osc.frequency.cancelScheduledValues(now);
+        bassNode.osc.frequency.setValueAtTime(bassNode.osc.frequency.value, now);
+        bassNode.osc.frequency.linearRampToValueAtTime(chord[0] / 4, now + 2.0);
+        fadeNode(bassNode, 0.025 + intensity * 0.015, 1.5);
+      } catch(e) {}
     }
   }
 
-  // ---- SOFT KICK (shuffled feel) ----
-  if (beatInBar % 4 === 0) {
-    playMusicNote(55, 0.12, 'sine', 0.05 + intensity * 0.025, 0);
-  }
-  // Offbeat kick for swing at higher intensity
-  if (intensity > 0.35 && beatInBar % 4 === 2) {
-    playMusicNote(55, 0.08, 'sine', 0.03, 0);
-  }
-
-  // ---- BRUSHED SHAKER (light and airy) ----
-  if (beatInBar % 2 === 0) {
-    playMusicNote(5000 + Math.random() * 3000, 0.015, 'sine', 0.01 + intensity * 0.008, 0);
-  }
-  // Extra offbeat shaker for groove
-  if (intensity > 0.3 && beatInBar % 2 === 1) {
-    playMusicNote(7000 + Math.random() * 2000, 0.01, 'sine', 0.006, 0);
-  }
-
-  // ---- MELODY (cheerful, playful, like whistling in the park) ----
-  if (melodyRhythm[beatInBar % melodyRhythm.length]) {
-    // Melodic motion: rising and falling phrases
-    const phrase = Math.floor(musicBeat / 16) % 4;
-    const noteInPhrase = musicBeat % 8;
-    let melodyPos;
-    if (phrase < 2) {
-      // Rising phrase
-      melodyPos = (noteInPhrase + phrase * 2) % scale.length;
-    } else {
-      // Falling phrase  
-      melodyPos = (scale.length - 1 - noteInPhrase + (phrase - 2) * 2) % scale.length;
+  // ---- MELODY LAYER (occasional gentle notes that float over the pads) ----
+  if (now - lastMelodyTime > (3.5 - intensity * 1.5)) {
+    lastMelodyTime = now;
+    const melNotes = chords[currentChord % chords.length];
+    const melNote = melNotes[Math.floor(Math.random() * melNotes.length)] * (Math.random() < 0.4 ? 2 : 1);
+    const melVol = 0.02 + intensity * 0.01;
+    
+    // Create a short-lived melody note that fades in and out
+    const mel = createSmoothTone(melNote, 0, 'triangle');
+    if (mel) {
+      fadeNode(mel, melVol, 0.8);
+      setTimeout(() => fadeNode(mel, 0, 1.5), 1200);
+      setTimeout(() => { try { mel.osc.stop(); } catch(e) {} }, 3000);
     }
-    melodyPos = clamp(melodyPos, 0, scale.length - 1);
-    const melodyNote = scale[melodyPos];
-    const melVol = 0.025 + intensity * 0.012;
-    // Triangle wave for a warm whistle-like tone
-    playMusicNote(melodyNote, beatDur * 1.2, 'triangle', melVol, 0);
-
-    // Harmony at higher intensity (a warm third)
-    if (intensity > 0.4) {
-      const harmIdx = (melodyPos + 2) % scale.length;
-      playMusicNote(scale[harmIdx], beatDur * 0.8, 'sine', melVol * 0.4, beatDur * 0.1);
+    
+    // Occasionally add a higher shimmer
+    if (Math.random() < 0.3 + intensity * 0.2) {
+      const shim = createSmoothTone(melNote * 2, 0, 'sine');
+      if (shim) {
+        fadeNode(shim, melVol * 0.3, 1.0);
+        setTimeout(() => fadeNode(shim, 0, 2.0), 800);
+        setTimeout(() => { try { shim.osc.stop(); } catch(e) {} }, 3500);
+      }
     }
   }
 
-  // ---- PLUCKY ARPEGGIO (like a ukulele strumming in the sun) ----
-  if (beatInBar % 4 === 1) {
-    const arpBase = (musicBeat * 2) % scale.length;
-    const arpNote = scale[arpBase];
-    const arpVol = 0.015 + intensity * 0.008;
-    playMusicNote(arpNote * 2, beatDur * 0.25, 'triangle', arpVol, 0);
-    playMusicNote(scale[(arpBase + 2) % scale.length] * 2, beatDur * 0.25, 'triangle', arpVol * 0.7, beatDur * 0.12);
-    playMusicNote(scale[(arpBase + 4) % scale.length] * 2, beatDur * 0.25, 'triangle', arpVol * 0.5, beatDur * 0.24);
-  }
+  // Advance chord
+  currentChord++;
 
-  // ---- CHASE URGENCY (only at high panic - rhythmic pulse) ----
-  if (intensity > 0.6 && beatInBar % 2 === 0) {
-    const urgNote = scale[3];
-    playMusicNote(urgNote, beatDur * 0.4, 'triangle', 0.015 + (intensity - 0.6) * 0.02, 0);
-  }
-
-  musicBeat++;
-
-  if (musicPlaying) {
-    clearTimeout(musicInterval);
-    musicInterval = setTimeout(musicTick, (beatDur * 1000) / 2);
-  }
-}
-
-let muted = false;
-function toggleMute() {
-  muted = !muted;
-  document.getElementById('muteBtn').textContent = muted ? '🔇' : '🔊';
-  if (audioCtx) {
-    if (muted) { 
-      audioCtx.suspend();
-      if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
-    }
-    else audioCtx.resume();
-  }
+  // Schedule next update
+  const updateRate = 3500 - intensity * 1000; // faster chord changes at high panic
+  musicLoop = setTimeout(musicUpdate, updateRate);
 }
 
 function startMusic() {
   if (musicPlaying) return;
   musicPlaying = true;
-  musicBeat = 0;
-  musicTick();
+  currentChord = 0;
+  padNodes = [];
+  bassNode = null;
+  melodyNode = null;
+  lastMelodyTime = 0;
+  musicUpdate();
 }
 
 function stopMusic() {
   musicPlaying = false;
-  if (musicInterval) clearTimeout(musicInterval);
-  musicInterval = null;
+  if (musicLoop) clearTimeout(musicLoop);
+  musicLoop = null;
+  // Fade out all nodes smoothly
+  for (let n of padNodes) stopNode(n, 1.0);
+  if (bassNode) stopNode(bassNode, 1.0);
+  padNodes = [];
+  bassNode = null;
 }
 
 

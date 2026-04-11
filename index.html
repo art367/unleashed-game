@@ -69,10 +69,27 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 <div class="name">Terrier</div>
 <div class="stat">🌀 Agility+</div>
 </div>
+<div class="breed-card" data-breed="pug" onclick="selectBreed(this)">
+<span class="emoji">🐶</span>
+<div class="name">Pug</div>
+<div class="stat">💪 Stamina+</div>
+</div>
+<div class="breed-card" data-breed="greatdane" onclick="selectBreed(this)">
+<span class="emoji">🐕‍🦺</span>
+<div class="name">Great Dane</div>
+<div class="stat">🏔️ BIG BOY</div>
+</div>
 </div>
 <div class="name-input-wrap">
 <label>Dog name:</label>
 <input type="text" id="dogNameInput" value="FENTON" maxlength="12" placeholder="FENTON">
+</div>
+<div class="name-input-wrap" style="gap:12px">
+<label>Owner:</label>
+<div style="display:flex;gap:8px">
+<button class="owner-gender-btn selected" data-gender="male" onclick="selectOwnerGender(this)" style="background:rgba(74,144,217,0.2);border:2px solid rgba(74,144,217,0.5);border-radius:10px;padding:6px 14px;color:#fff;font-size:0.85rem;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:manipulation">👨 Male</button>
+<button class="owner-gender-btn" data-gender="female" onclick="selectOwnerGender(this)" style="background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.2);border-radius:10px;padding:6px 14px;color:#fff;font-size:0.85rem;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:manipulation">👩 Female</button>
+</div>
 </div>
 <button class="start-btn" onclick="startGame()">🐾 LET'S GO!</button>
 <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px">Arrow keys / touch to move • Space / tap to dash</div>
@@ -161,7 +178,9 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 const BREEDS = {
   labrador: { name:'Labrador', speed:1.0, stamina:1.3, agility:1.0, color:'#D4A843', darkColor:'#B8922A', earColor:'#C49B35', scale:2.2 },
   greyhound: { name:'Greyhound', speed:1.35, stamina:0.8, agility:0.95, color:'#C4A882', darkColor:'#A89070', earColor:'#B09575', scale:2.3 },
-  terrier: { name:'Terrier', speed:0.95, stamina:1.0, agility:1.35, color:'#8B7355', darkColor:'#6B5A42', earColor:'#7A6548', scale:1.8 }
+  terrier: { name:'Terrier', speed:0.95, stamina:1.0, agility:1.35, color:'#8B7355', darkColor:'#6B5A42', earColor:'#7A6548', scale:1.8 },
+  pug: { name:'Pug', speed:0.7, stamina:1.5, agility:0.85, color:'#D2B48C', darkColor:'#A0845C', earColor:'#8B7355', scale:1.6 },
+  greatdane: { name:'Great Dane', speed:1.15, stamina:0.7, agility:0.75, color:'#4A4A4A', darkColor:'#333333', earColor:'#3A3A3A', scale:3.0 }
 };
 
 const COLORS = {
@@ -179,7 +198,7 @@ const COLORS = {
 };
 
 const PANIC_LINES = [
-  { threshold:0, lines:["{NAME}! Here boy!","{NAME}! Come back!","{NAME}! Good dog, come!","{NAME}! Walkies!","{NAME}! Treat! Want a treat?"], rate:0.9, pitch:1.0 },
+  { threshold:0, lines:["{NAME}! Here " + (ownerGender === "male" ? "boy" : "girl") + "!","{NAME}! Come back!","{NAME}! Good dog, come!","{NAME}! Walkies!","{NAME}! Treat! Want a treat?"], rate:0.9, pitch:1.0 },
   { threshold:20, lines:["{NAME}!","{NAME}! Come here!","{NAME}! Bad dog!","{NAME}! No no no!","{NAME}! Come HERE!","{NAME}! Leave it!","{NAME}! DROP IT!"], rate:1.0, pitch:1.1 },
   { threshold:45, lines:["{NAME}!!","{NAME}!! COME BACK!!","{NAME}!! STOP!!","Somebody grab {NAME}!","Oh for— {NAME}!!","{NAME}! NOT THE SQUIRRELS!","LEAVE THE DUCKS ALONE {NAME}!!","{NAME} I SWEAR TO GOD!"], rate:1.1, pitch:1.25 },
   { threshold:70, lines:["OH JESUS CHRIST {NAME}!!","{NAME}!! OH GOD!!","{NAME}!! THE DEEEEER!!","OH MY GOD!! {NAME}!!","FENTOOOON!! I mean {NAME}!!","{NAME}!! NOT THE DUCKS!!","SOMEBODY STOP THAT DOG!!","{NAME}!! I'M GOING TO KILL YOU!!","{NAME} {NAME} {NAME}!!","OH NO OH NO {NAME}!!"], rate:1.3, pitch:1.45 }
@@ -200,6 +219,7 @@ let W, H;
 
 let state = 'menu'; // menu, playing, gameover
 let selectedBreed = 'labrador';
+let ownerGender = 'male';
 let dogName = 'FENTON';
 let highScore = parseInt(localStorage.getItem('unleashed_high') || '0');
 
@@ -220,6 +240,10 @@ let humansHit = 0;
 let pooTimer = 0; // countdown to next poo
 let dogPooing = false; // is dog currently squatting?
 let pooSquatTimer = 0; // how long the squat lasts
+let dogWeeing = false; // is dog weeing up a tree?
+let weeTimer = 0; // how long the wee lasts
+let weeTreeX = 0; // x position of tree being wee'd on
+let weeTreeY = 0; // screen y position
 let panicLevel, gameSpeed, spawnTimer, difficultyTimer;
 let shakeX, shakeY, shakeDuration;
 let dashCooldown, dashActive, dashTimer;
@@ -384,6 +408,36 @@ function spawnSplash(x, y) {
   }
 }
 
+function getOwnerVoice() {
+  if (typeof speechSynthesis === 'undefined') return null;
+  const voices = speechSynthesis.getVoices();
+  if (ownerGender === 'female') {
+    const britishFemale = voices.find(v => v.lang.includes('en-GB') && v.name.toLowerCase().includes('female'));
+    const anyFemale = voices.find(v => v.lang.includes('en') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('samantha') || v.name.toLowerCase().includes('karen') || v.name.toLowerCase().includes('victoria') || v.name.toLowerCase().includes('fiona') || v.name.toLowerCase().includes('moira')));
+    const british = voices.find(v => v.lang.includes('en-GB'));
+    return britishFemale || anyFemale || british || voices.find(v => v.lang.includes('en')) || null;
+  } else {
+    const britishMale = voices.find(v => v.lang.includes('en-GB') && v.name.toLowerCase().includes('male'));
+    const anyMale = voices.find(v => v.lang.includes('en') && (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('daniel') || v.name.toLowerCase().includes('alex') || v.name.toLowerCase().includes('james')));
+    const british = voices.find(v => v.lang.includes('en-GB'));
+    return britishMale || anyMale || british || voices.find(v => v.lang.includes('en')) || null;
+  }
+}
+
+function speakLine(text, rate, pitch) {
+  if (typeof speechSynthesis === 'undefined') return;
+  try {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.voice = getOwnerVoice();
+    utter.rate = rate || 1.0;
+    // Female voice gets slightly higher pitch
+    utter.pitch = ownerGender === 'female' ? (pitch || 1.0) * 1.15 : (pitch || 1.0);
+    utter.volume = 1.0;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter);
+  } catch(e) {}
+}
+
 function shoutName() {
   const now = Date.now();
   // Cooldown: shorter at higher panic (rapid-fire yelling)
@@ -403,31 +457,14 @@ function shoutName() {
   ownerSpeechBubble.timer = 2.5;
   ownerSpeechBubble.maxTimer = 2.5;
 
-  // Try speech synthesis
-  if (typeof speechSynthesis !== 'undefined') {
-    try {
-      const utter = new SpeechSynthesisUtterance(line);
-      const voices = speechSynthesis.getVoices();
-      // Prefer British male voice for maximum Fenton energy
-      const britishMale = voices.find(v => v.lang.includes('en-GB') && v.name.toLowerCase().includes('male'));
-      const british = voices.find(v => v.lang.includes('en-GB'));
-      const english = voices.find(v => v.lang.includes('en'));
-      utter.voice = britishMale || british || english || null;
-      utter.rate = tier.rate;
-      utter.pitch = tier.pitch;
-      utter.volume = 1.0;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utter);
-    } catch(e) {}
-  }
+  // Try speech synthesis with gender-appropriate voice
+  speakLine(line, tier.rate, tier.pitch);
 
   // Also play a "shout" sound effect so there's always audio feedback
   if (panicLevel > 50) {
-    // Frantic whistle/yell sound
     playTone(600, 0.15, 'square', 0.2, 400);
     setTimeout(() => playTone(800, 0.1, 'square', 0.15, -200), 160);
   } else {
-    // Calmer call
     playTone(400, 0.12, 'sine', 0.12, 100);
   }
 }
@@ -672,11 +709,24 @@ function drawOwner(x, y, panicPct, runPhase) {
   ctx.ellipse(0, -18*s, 9*s, 10*s, 0, 0, Math.PI*2);
   ctx.fill();
 
-  // Hair
-  ctx.fillStyle = COLORS.ownerHair;
+  // Hair - changes based on gender
+  ctx.fillStyle = ownerGender === 'female' ? '#8B4513' : COLORS.ownerHair;
   ctx.beginPath();
-  ctx.ellipse(0, -24*s, 10*s, 6*s, 0, 0, Math.PI);
-  ctx.fill();
+  if (ownerGender === 'female') {
+    // Longer hair for female
+    ctx.ellipse(0, -24*s, 11*s, 7*s, 0, 0, Math.PI);
+    ctx.fill();
+    // Hair sides
+    ctx.beginPath();
+    ctx.ellipse(-9*s, -18*s, 4*s, 10*s, 0.2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(9*s, -18*s, 4*s, 10*s, -0.2, 0, Math.PI*2);
+    ctx.fill();
+  } else {
+    ctx.ellipse(0, -24*s, 10*s, 6*s, 0, 0, Math.PI);
+    ctx.fill();
+  }
 
   // Eyes (widening with panic)
   const eyeH = 2 + (panicPct / 50);
@@ -717,29 +767,36 @@ function drawOwner(x, y, panicPct, runPhase) {
 
 function drawSquirrel(x, y, phase) {
   ctx.save(); ctx.translate(x, y);
+  const s = 3.5; // BIGGER squirrel!
   // Bushy tail
   ctx.fillStyle = COLORS.squirrelLight;
   ctx.beginPath();
-  ctx.ellipse(-6, -8, 5, 10, -0.3, 0, Math.PI*2);
+  ctx.ellipse(-6*s, -8*s, 5*s, 10*s, -0.3, 0, Math.PI*2);
   ctx.fill();
   // Body
   ctx.fillStyle = COLORS.squirrel;
   ctx.beginPath();
-  ctx.ellipse(0, 0, 6, 5, 0, 0, Math.PI*2);
+  ctx.ellipse(0, 0, 6*s, 5*s, 0, 0, Math.PI*2);
   ctx.fill();
   // Head
   ctx.beginPath();
-  ctx.arc(6, -3, 4, 0, Math.PI*2);
+  ctx.arc(6*s, -3*s, 4*s, 0, Math.PI*2);
   ctx.fill();
   // Eye
   ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(8, -4, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(8*s, -4*s, 1.5*s, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = '#000';
-  ctx.beginPath(); ctx.arc(8.5, -4, 0.8, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(8.5*s, -4*s, 0.8*s, 0, Math.PI*2); ctx.fill();
+  // Cute cheeks
+  ctx.fillStyle = COLORS.squirrelLight;
+  ctx.beginPath(); ctx.arc(7*s, -1.5*s, 2*s, 0, Math.PI*2); ctx.fill();
   // Ears
   ctx.fillStyle = COLORS.squirrel;
-  ctx.beginPath(); ctx.arc(4, -7, 1.5, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(7, -6.5, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4*s, -7*s, 1.5*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(7*s, -6.5*s, 1.5*s, 0, Math.PI*2); ctx.fill();
+  // Paws holding nut
+  ctx.fillStyle = '#DAA520';
+  ctx.beginPath(); ctx.arc(4*s, 2*s, 1.5*s, 0, Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
@@ -1302,6 +1359,8 @@ function initGame() {
   humansHit = 0;
   dogPooing = false;
   pooSquatTimer = 0;
+  dogWeeing = false;
+  weeTimer = 0;
   combo = 0;
   comboTimer = 0;
   panicLevel = 0;
@@ -1323,6 +1382,23 @@ function selectBreed(el) {
   document.querySelectorAll('.breed-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   selectedBreed = el.dataset.breed;
+}
+
+function selectOwnerGender(el) {
+  document.querySelectorAll('.owner-gender-btn').forEach(b => {
+    b.classList.remove('selected');
+    b.style.background = 'rgba(255,255,255,0.1)';
+    b.style.borderColor = 'rgba(255,255,255,0.2)';
+  });
+  el.classList.add('selected');
+  ownerGender = el.dataset.gender;
+  if (ownerGender === 'male') {
+    el.style.background = 'rgba(74,144,217,0.2)';
+    el.style.borderColor = 'rgba(74,144,217,0.5)';
+  } else {
+    el.style.background = 'rgba(232,160,191,0.2)';
+    el.style.borderColor = 'rgba(232,160,191,0.5)';
+  }
 }
 
 // ==================== SPAWNING ====================
@@ -1646,23 +1722,9 @@ function update(dt) {
       ownerSpeechBubble.timer = 2.5;
       ownerSpeechBubble.maxTimer = 2.5;
 
-      // Speak it
-      if (typeof speechSynthesis !== 'undefined') {
-        try {
-          const utter = new SpeechSynthesisUtterance(chosenShout);
-          const voices = speechSynthesis.getVoices();
-          const britishMale = voices.find(v => v.lang.includes('en-GB') && v.name.toLowerCase().includes('male'));
-          const british = voices.find(v => v.lang.includes('en-GB'));
-          const english = voices.find(v => v.lang.includes('en'));
-          utter.voice = britishMale || british || english || null;
-          utter.rate = panicLevel > 50 ? 1.3 : 1.0;
-          utter.pitch = panicLevel > 50 ? 1.4 : 1.1;
-          utter.volume = 1.0;
-          speechSynthesis.cancel();
-          speechSynthesis.speak(utter);
-          lastVoiceTime = Date.now();
-        } catch(e) {}
-      }
+      // Speak it with gender-appropriate voice
+      speakLine(chosenShout, panicLevel > 50 ? 1.3 : 1.0, panicLevel > 50 ? 1.4 : 1.1);
+      lastVoiceTime = Date.now();
 
       // Sound effects per animal
       if (a.type === 'squirrel') sfx_catch();
@@ -1775,8 +1837,17 @@ function update(dt) {
           break;
         case 'food':
           score += 50;
-          owner.baseOffset = Math.min(H * 0.6, owner.baseOffset + 30);
           spawnFloatText(p.x, psy, '+50 🍗', '#DAA520');
+          // Eating food triggers an urgent poo! Dog slows down, owner can catch up
+          if (!dogPooing) {
+            pooTimer = rand(1.5, 3.0); // poo coming VERY soon after eating
+            showCombo('🍗 YUMMY! 💩 UH OH...');
+            speakLine(dogName + ' NO! DONT EAT THAT! Oh no...', 1.1, 1.2);
+            lastVoiceTime = Date.now();
+            ownerSpeechBubble.text = dogName + '!! SPIT IT OUT!!';
+            ownerSpeechBubble.timer = 2.0;
+            ownerSpeechBubble.maxTimer = 2.0;
+          }
           break;
       }
     }
@@ -1813,20 +1884,8 @@ function update(dt) {
       ownerSpeechBubble.timer = 2.5;
       ownerSpeechBubble.maxTimer = 2.5;
       
-      if (typeof speechSynthesis !== 'undefined') {
-        try {
-          const utter = new SpeechSynthesisUtterance(pondShout);
-          const voices = speechSynthesis.getVoices();
-          const bv = voices.find(v => v.lang.includes('en-GB')) || voices.find(v => v.lang.includes('en'));
-          if (bv) utter.voice = bv;
-          utter.rate = 1.2;
-          utter.pitch = 1.3;
-          utter.volume = 1.0;
-          speechSynthesis.cancel();
-          speechSynthesis.speak(utter);
-          lastVoiceTime = Date.now();
-        } catch(e) {}
-      }
+      speakLine(pondShout, 1.2, 1.3);
+      lastVoiceTime = Date.now();
       
       panicLevel = clamp(panicLevel + 12, 0, 100);
       score += 30;
@@ -1834,6 +1893,34 @@ function update(dt) {
       // Slow dog briefly in water
       gameSpeed = Math.max(1.5, gameSpeed - 0.3);
       setTimeout(() => { if (state === 'playing') gameSpeed += 0.3; }, 500);
+      
+      // Dog needs a wee up a tree after the pond!
+      if (!dogWeeing && !dogPooing) {
+        setTimeout(() => {
+          if (state === 'playing' && !dogWeeing && !dogPooing) {
+            dogWeeing = true;
+            weeTimer = 2.0;
+            // Find nearest tree from scenery
+            let nearestTree = null;
+            let nearestDist = Infinity;
+            for (let sc of scenery) {
+              if (sc.type === 'tree') {
+                const td = Math.abs(sc.x - dog.x) + Math.abs(sc.y - dog.y);
+                if (td < nearestDist) { nearestDist = td; nearestTree = sc; }
+              }
+            }
+            weeTreeX = nearestTree ? nearestTree.x : dog.x + 40;
+            weeTreeY = nearestTree ? nearestTree.y : dog.y;
+            showCombo('🌳💦 MARKING TERRITORY!');
+            speakLine(dogName + '! NOT ON THE TREE! OH COME ON!', 1.2, 1.3);
+            lastVoiceTime = Date.now();
+            ownerSpeechBubble.text = dogName + '!! NOT ON THE TREE!!';
+            ownerSpeechBubble.timer = 2.5;
+            ownerSpeechBubble.maxTimer = 2.5;
+            panicLevel = clamp(panicLevel + 8, 0, 100);
+          }
+        }, 600);
+      }
     }
     // Reset splash when dog leaves
     if (!inPond && s.splashed) {
@@ -1889,18 +1976,8 @@ function update(dt) {
     ownerSpeechBubble.text = 'OH NO ' + dogName + '... NOT HERE!!';
     ownerSpeechBubble.timer = 2.0;
     ownerSpeechBubble.maxTimer = 2.0;
-    if (typeof speechSynthesis !== 'undefined') {
-      try {
-        const utter = new SpeechSynthesisUtterance('Oh no ' + dogName + '! Not here! Not now!');
-        const voices = speechSynthesis.getVoices();
-        const bv = voices.find(v => v.lang.includes('en-GB')) || voices.find(v => v.lang.includes('en'));
-        if (bv) utter.voice = bv;
-        utter.rate = 1.1; utter.pitch = 1.3; utter.volume = 1.0;
-        speechSynthesis.cancel();
-        speechSynthesis.speak(utter);
-        lastVoiceTime = Date.now();
-      } catch(e) {}
-    }
+    speakLine('Oh no ' + dogName + '! Not here! Not now!', 1.1, 1.3);
+    lastVoiceTime = Date.now();
   }
   
   if (dogPooing) {
@@ -1934,6 +2011,41 @@ function update(dt) {
     }
   }
   
+  // ==================== DOG WEE MECHANIC ====================
+  if (dogWeeing) {
+    weeTimer -= dt;
+    // Dog slows down to cock leg and wee
+    gameSpeed = Math.max(0.3, gameSpeed * 0.9);
+    
+    // Yellow particles (wee stream)
+    if (Math.random() < 0.6) {
+      const weeDir = weeTreeX > dog.x ? 1 : -1;
+      particles.push({
+        x: dog.x + weeDir * 15, y: dog.y - camera.y - 5,
+        vx: weeDir * rand(1.5, 3), vy: rand(-1, 1),
+        life: 0.4, maxLife: 0.4, size: rand(1, 3),
+        color: '#FFD700'
+      });
+    }
+    
+    if (weeTimer <= 0) {
+      dogWeeing = false;
+      score += 15;
+      spawnFloatText(dog.x, dog.y - camera.y, '🌳💦 +15', '#FFD700');
+      
+      const weeLines = [
+        'Oh for GODS sake ' + dogName + '!',
+        'EVERY. SINGLE. TREE. ' + dogName + '!!',
+        dogName + '!! That is DISGUSTING!!',
+        'I am SO sorry about the tree!'
+      ];
+      const weeLine = weeLines[Math.floor(Math.random() * weeLines.length)];
+      ownerSpeechBubble.text = weeLine;
+      ownerSpeechBubble.timer = 2.0;
+      ownerSpeechBubble.maxTimer = 2.0;
+    }
+  }
+
   // Check if owner reaches a poo and picks it up (bag it!)
   for (let p of poos) {
     if (p.pickedUp) continue;
@@ -2073,7 +2185,7 @@ function render() {
     }
   }
 
-  // Dog (player) - squat animation if pooing
+  // Dog (player) - squat animation if pooing, leg-cock if weeing
   if (dogPooing) {
     // Squatting dog - draw lower & wider
     ctx.save();
@@ -2087,6 +2199,31 @@ function render() {
     ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('😣', dog.x, dog.y - camY - 25);
+  } else if (dogWeeing) {
+    // Dog cocking leg against tree
+    ctx.save();
+    const weeScreenY = dog.y - camY;
+    // Tilt the dog slightly to show leg raised
+    ctx.translate(dog.x, weeScreenY);
+    const treeDir = weeTreeX > dog.x ? 1 : -1;
+    ctx.scale(treeDir, 1); // face the tree
+    ctx.translate(-dog.x, -weeScreenY);
+    drawDog(dog.x, weeScreenY, dog.breed, dog.runPhase * 0.05, false);
+    ctx.restore();
+    // Draw the wee stream 💦
+    const weeDir = weeTreeX > dog.x ? 1 : -1;
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(dog.x + weeDir * 18, weeScreenY + 5);
+    ctx.quadraticCurveTo(dog.x + weeDir * 30, weeScreenY - 10, dog.x + weeDir * 38, weeScreenY - 5);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Leg raised emoji
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🌳💦', dog.x, weeScreenY - 30);
   } else {
     drawDog(dog.x, dog.y - camY, dog.breed, dog.runPhase, dashActive);
   }

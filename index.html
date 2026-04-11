@@ -683,31 +683,60 @@ function drawOtherDog(x, y, phase, color) {
 
 function generateScenery(startY, endY) {
   for (let y = startY; y < endY; y += rand(80, 160)) {
-    // Trees on sides
+    const pathCX = getPathCenterX(y);
+    const pathHW = W * 0.2 + 20; // half-width + margin
+    // Trees on sides (avoiding wiggly path)
     if (Math.random() < 0.6) {
-      const side = Math.random() < 0.5 ? rand(20, 70) : rand(W - 70, W - 20);
-      scenery.push({ type:'tree', x:side, y, size:rand(15,25) });
+      const leftSpace = pathCX - pathHW;
+      const rightStart = pathCX + pathHW;
+      const side = Math.random() < 0.5
+        ? rand(Math.max(15, leftSpace - 80), Math.max(20, leftSpace - 10))
+        : rand(Math.min(W - 20, rightStart + 10), Math.min(W - 15, rightStart + 80));
+      if (side > 10 && side < W - 10) {
+        scenery.push({ type:'tree', x:side, y, size:rand(15,25) });
+      }
     }
     // Bushes
     if (Math.random() < 0.4) {
-      const side = Math.random() < 0.5 ? rand(10, 90) : rand(W - 90, W - 10);
-      scenery.push({ type:'bush', x:side, y, size:rand(8,16) });
+      const leftSpace = pathCX - pathHW;
+      const rightStart = pathCX + pathHW;
+      const side = Math.random() < 0.5
+        ? rand(Math.max(10, leftSpace - 60), Math.max(15, leftSpace - 5))
+        : rand(Math.min(W - 15, rightStart + 5), Math.min(W - 10, rightStart + 60));
+      if (side > 5 && side < W - 5) {
+        scenery.push({ type:'bush', x:side, y, size:rand(8,16) });
+      }
     }
-    // Flowers
+    // Flowers (off the path)
     if (Math.random() < 0.5) {
       for (let f = 0; f < randInt(2,5); f++) {
         const fx = rand(10, W-10);
-        const inPath = fx > W*0.25 && fx < W*0.75;
-        if (!inPath) {
-          scenery.push({ type:'flower', x:fx, y:y+rand(-20,20), color:[COLORS.flower1,COLORS.flower2,COLORS.flower3][randInt(0,2)], size:rand(2,4) });
+        const fy = y + rand(-20, 20);
+        const fPathCX = getPathCenterX(fy);
+        const onPath = fx > fPathCX - pathHW && fx < fPathCX + pathHW;
+        if (!onPath) {
+          scenery.push({ type:'flower', x:fx, y:fy, color:[COLORS.flower1,COLORS.flower2,COLORS.flower3][randInt(0,2)], size:rand(2,4) });
         }
       }
     }
-    // Pond sections
+    // Pond sections (off path)
     if (Math.random() < 0.12) {
-      scenery.push({ type:'pond', x:rand(W*0.15, W*0.85), y, w:rand(60,120), h:rand(40,70) });
+      const pondX = Math.random() < 0.5
+        ? rand(20, Math.max(30, pathCX - pathHW - 30))
+        : rand(Math.min(W - 30, pathCX + pathHW + 30), W - 20);
+      if (pondX > 20 && pondX < W - 20) {
+        scenery.push({ type:'pond', x:pondX, y, w:rand(50,90), h:rand(35,55) });
+      }
     }
   }
+}
+
+function getPathCenterX(worldY) {
+  // Multiple sine waves for organic wiggly path
+  return W/2
+    + Math.sin(worldY * 0.0035) * W * 0.15
+    + Math.sin(worldY * 0.0012 + 2.0) * W * 0.1
+    + Math.sin(worldY * 0.007 + 0.5) * W * 0.04;
 }
 
 function drawBackground(camY) {
@@ -726,24 +755,83 @@ function drawBackground(camY) {
     ctx.fillRect(0, y, W, stripeH);
   }
 
-  // Path
-  const pathW = W * 0.45;
-  const pathX = (W - pathW) / 2;
+  // Wiggly path - draw as filled shape following sine curves
+  const pathHalfW = W * 0.2;
+  const step = 6; // pixels per segment (smooth curves)
+
+  // Path edge (slightly wider, darker)
   ctx.fillStyle = COLORS.pathEdge;
-  ctx.fillRect(pathX - 4, 0, pathW + 8, H);
+  ctx.beginPath();
+  // Left edge going down
+  for (let sy = -step; sy <= H + step; sy += step) {
+    const worldY = camY + sy;
+    const cx = getPathCenterX(worldY);
+    const lx = cx - pathHalfW - 4;
+    if (sy === -step) ctx.moveTo(lx, sy);
+    else ctx.lineTo(lx, sy);
+  }
+  // Right edge going back up
+  for (let sy = H + step; sy >= -step; sy -= step) {
+    const worldY = camY + sy;
+    const cx = getPathCenterX(worldY);
+    const rx = cx + pathHalfW + 4;
+    ctx.lineTo(rx, sy);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // Main path fill
   ctx.fillStyle = COLORS.path;
-  ctx.fillRect(pathX, 0, pathW, H);
-  // Path center line (dashed)
+  ctx.beginPath();
+  for (let sy = -step; sy <= H + step; sy += step) {
+    const worldY = camY + sy;
+    const cx = getPathCenterX(worldY);
+    const lx = cx - pathHalfW;
+    if (sy === -step) ctx.moveTo(lx, sy);
+    else ctx.lineTo(lx, sy);
+  }
+  for (let sy = H + step; sy >= -step; sy -= step) {
+    const worldY = camY + sy;
+    const cx = getPathCenterX(worldY);
+    const rx = cx + pathHalfW;
+    ctx.lineTo(rx, sy);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // Wiggly center dashed line
   ctx.strokeStyle = 'rgba(255,255,255,0.15)';
   ctx.lineWidth = 2;
   ctx.setLineDash([10, 15]);
-  const dashOffset = camY % 25;
-  ctx.lineDashOffset = dashOffset;
+  ctx.lineDashOffset = camY % 25;
   ctx.beginPath();
-  ctx.moveTo(W/2, 0);
-  ctx.lineTo(W/2, H);
+  for (let sy = -step; sy <= H + step; sy += step) {
+    const worldY = camY + sy;
+    const cx = getPathCenterX(worldY);
+    if (sy === -step) ctx.moveTo(cx, sy);
+    else ctx.lineTo(cx, sy);
+  }
   ctx.stroke();
   ctx.setLineDash([]);
+
+  // Grass tufts along path edges for organic feel
+  ctx.fillStyle = '#5AAE60';
+  for (let sy = 0; sy < H; sy += 18) {
+    const worldY = camY + sy;
+    const cx = getPathCenterX(worldY);
+    // Left edge tufts
+    const lx = cx - pathHalfW - 2;
+    const tiltL = Math.sin(worldY * 0.05) * 0.3;
+    ctx.save(); ctx.translate(lx, sy); ctx.rotate(tiltL);
+    ctx.beginPath(); ctx.ellipse(0, 0, 4, 2, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+    // Right edge tufts
+    const rx = cx + pathHalfW + 2;
+    const tiltR = Math.sin(worldY * 0.05 + 1) * 0.3;
+    ctx.save(); ctx.translate(rx, sy); ctx.rotate(tiltR);
+    ctx.beginPath(); ctx.ellipse(0, 0, 4, 2, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
 }
 
 function drawSceneryItem(item, camY) {
@@ -975,9 +1063,11 @@ function selectBreed(el) {
 // ==================== SPAWNING ====================
 
 function spawnAnimal() {
-  const pathLeft = W * 0.15;
-  const pathRight = W * 0.85;
   const spawnY = camera.y - 60;
+  const spawnCX = getPathCenterX(spawnY);
+  const pathHW = W * 0.2;
+  const pathLeft = spawnCX - pathHW;
+  const pathRight = spawnCX + pathHW;
   const r = Math.random();
 
   if (r < 0.40) {
@@ -1021,9 +1111,11 @@ function spawnAnimal() {
 }
 
 function spawnObstacle() {
-  const pathLeft = W * 0.2;
-  const pathRight = W * 0.8;
   const spawnY = camera.y - 60;
+  const spawnCX = getPathCenterX(spawnY);
+  const pathHW = W * 0.18;
+  const pathLeft = spawnCX - pathHW;
+  const pathRight = spawnCX + pathHW;
   const r = Math.random();
 
   if (r < 0.3) {
@@ -1056,9 +1148,11 @@ function spawnObstacle() {
 }
 
 function spawnPickup() {
-  const pathLeft = W * 0.2;
-  const pathRight = W * 0.8;
   const spawnY = camera.y - 60;
+  const spawnCX = getPathCenterX(spawnY);
+  const pathHW = W * 0.18;
+  const pathLeft = spawnCX - pathHW;
+  const pathRight = spawnCX + pathHW;
   const r = Math.random();
 
   const type = r < 0.4 ? 'bone' : r < 0.7 ? 'ball' : 'food';

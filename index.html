@@ -259,6 +259,7 @@ let dashCooldown, dashActive, dashTimer;
 let lastVoiceTime = 0;
 let lastShoutTime = 0;
 let ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
+let topShoutBanner = { text:'', timer:0, maxTimer:0 }; // Big visible shout at top of screen
 let gameTime = 0;
 
 // Input
@@ -459,14 +460,31 @@ function speakLine(text, rate, pitch, priority) {
   try {
     // Don't cancel a high-priority shout for a low-priority event line
     if (!priority && speechSynthesis.speaking && Date.now() - lastShoutTime < 800) return;
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.voice = getOwnerVoice();
-    utter.rate = rate || 1.0;
-    // Female voice gets slightly higher pitch
-    utter.pitch = ownerGender === 'female' ? (pitch || 1.0) * 1.15 : (pitch || 1.0);
-    utter.volume = 1.0;
+
+    // Chrome bug workaround: cancel and small delay helps speech actually fire
     speechSynthesis.cancel();
-    speechSynthesis.speak(utter);
+
+    const doSpeak = function() {
+      try {
+        const utter = new SpeechSynthesisUtterance(text);
+        const voice = getOwnerVoice();
+        if (voice) utter.voice = voice;
+        utter.rate = rate || 1.0;
+        // Female voice gets slightly higher pitch
+        utter.pitch = ownerGender === 'female' ? (pitch || 1.0) * 1.15 : (pitch || 1.0);
+        utter.volume = 1.0;
+        utter.lang = 'en-GB';
+        speechSynthesis.speak(utter);
+
+        // Chrome bug: speech can pause indefinitely, resume it
+        setTimeout(function() {
+          if (speechSynthesis.paused) speechSynthesis.resume();
+        }, 200);
+      } catch(e2) {}
+    };
+
+    // Small delay after cancel helps Chrome actually play the next utterance
+    setTimeout(doSpeak, 50);
   } catch(e) {}
 }
 
@@ -485,10 +503,15 @@ function shoutName() {
 
   const line = tier.lines[Math.floor(Math.random() * tier.lines.length)].replace(/\{NAME\}/g, dogName);
 
-  // Show speech bubble (always works even without speech synthesis)
+  // Show speech bubble above owner (always works even without speech synthesis)
   ownerSpeechBubble.text = line;
   ownerSpeechBubble.timer = 2.5;
   ownerSpeechBubble.maxTimer = 2.5;
+
+  // Also show big banner at top of screen so it's unmissable
+  topShoutBanner.text = line;
+  topShoutBanner.timer = 2.2;
+  topShoutBanner.maxTimer = 2.2;
 
   // Try speech synthesis with gender-appropriate voice
   speakLine(line, tier.rate, tier.pitch, true);  // high priority - don't get cancelled
@@ -1499,6 +1522,7 @@ function initGame() {
   lastVoiceTime = 0;
   lastShoutTime = 0;
   ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
+  topShoutBanner = { text:'', timer:0, maxTimer:0 };
 
   generateScenery(camera.y - H, camera.y + H * 3);
 }
@@ -1718,6 +1742,7 @@ function update(dt) {
 
   // Speech bubble decay
   if (ownerSpeechBubble.timer > 0) ownerSpeechBubble.timer -= dt;
+  if (topShoutBanner.timer > 0) topShoutBanner.timer -= dt;
 
   // Combo decay
   if (comboTimer > 0) {
@@ -1758,6 +1783,9 @@ function update(dt) {
       ownerSpeechBubble.text = 'OH NO! PARK KEEPER!!';
       ownerSpeechBubble.timer = 2.5;
       ownerSpeechBubble.maxTimer = 2.5;
+      topShoutBanner.text = 'OH NO! PARK KEEPER!! ' + dogName + ' COME HERE!!';
+      topShoutBanner.timer = 2.5;
+      topShoutBanner.maxTimer = 2.5;
     }
   }
 
@@ -1879,6 +1907,9 @@ function update(dt) {
       ownerSpeechBubble.text = chosenShout;
       ownerSpeechBubble.timer = 2.5;
       ownerSpeechBubble.maxTimer = 2.5;
+      topShoutBanner.text = chosenShout;
+      topShoutBanner.timer = 2.2;
+      topShoutBanner.maxTimer = 2.2;
 
       // Speak it with gender-appropriate voice
       speakLine(chosenShout, panicLevel > 50 ? 1.3 : 1.0, panicLevel > 50 ? 1.4 : 1.1);
@@ -1952,6 +1983,9 @@ function update(dt) {
           ownerSpeechBubble.text = helpShouts[Math.floor(Math.random() * helpShouts.length)];
           ownerSpeechBubble.timer = 1.5;
           ownerSpeechBubble.maxTimer = 1.5;
+          topShoutBanner.text = ownerSpeechBubble.text;
+          topShoutBanner.timer = 1.5;
+          topShoutBanner.maxTimer = 1.5;
         } else if (ob.type === 'blanket') {
           // Dog raids the picnic! Dog points!
           score += 80;
@@ -1970,6 +2004,9 @@ function update(dt) {
           ownerSpeechBubble.text = picnicShouts[Math.floor(Math.random() * picnicShouts.length)];
           ownerSpeechBubble.timer = 2.5;
           ownerSpeechBubble.maxTimer = 2.5;
+          topShoutBanner.text = ownerSpeechBubble.text;
+          topShoutBanner.timer = 2.2;
+          topShoutBanner.maxTimer = 2.2;
           speakLine(ownerSpeechBubble.text, 1.1, 1.3);
           lastVoiceTime = Date.now();
         } else {
@@ -2010,6 +2047,9 @@ function update(dt) {
           ownerSpeechBubble.text = 'GOOD ' + (ownerGender === 'female' ? 'GIRL' : 'BOY') + '! STAY!';
           ownerSpeechBubble.timer = 1.5;
           ownerSpeechBubble.maxTimer = 1.5;
+          topShoutBanner.text = ownerSpeechBubble.text;
+          topShoutBanner.timer = 1.5;
+          topShoutBanner.maxTimer = 1.5;
           // Brief slowdown
           dog.speed *= 0.6;
           setTimeout(() => { dog.speed = BREEDS[selectedBreed].speed; }, 800);
@@ -2025,6 +2065,9 @@ function update(dt) {
           ownerSpeechBubble.text = 'FETCH ' + dogName + '! COME!';
           ownerSpeechBubble.timer = 2.0;
           ownerSpeechBubble.maxTimer = 2.0;
+          topShoutBanner.text = ownerSpeechBubble.text;
+          topShoutBanner.timer = 2.0;
+          topShoutBanner.maxTimer = 2.0;
           // Dog slows down chasing ball
           dog.speed *= 0.5;
           setTimeout(() => { dog.speed = BREEDS[selectedBreed].speed; }, 1200);
@@ -2042,6 +2085,9 @@ function update(dt) {
             ownerSpeechBubble.text = dogName + '!! SPIT IT OUT!!';
             ownerSpeechBubble.timer = 2.0;
             ownerSpeechBubble.maxTimer = 2.0;
+            topShoutBanner.text = ownerSpeechBubble.text;
+            topShoutBanner.timer = 2.0;
+            topShoutBanner.maxTimer = 2.0;
           }
           break;
       }
@@ -2078,6 +2124,9 @@ function update(dt) {
       ownerSpeechBubble.text = pondShout;
       ownerSpeechBubble.timer = 2.5;
       ownerSpeechBubble.maxTimer = 2.5;
+      topShoutBanner.text = pondShout;
+      topShoutBanner.timer = 2.2;
+      topShoutBanner.maxTimer = 2.2;
       
       speakLine(pondShout, 1.2, 1.3);
       lastVoiceTime = Date.now();
@@ -2114,6 +2163,9 @@ function update(dt) {
             ownerSpeechBubble.text = dogName + '!! NOT ON THE TREE!!';
             ownerSpeechBubble.timer = 2.5;
             ownerSpeechBubble.maxTimer = 2.5;
+            topShoutBanner.text = ownerSpeechBubble.text;
+            topShoutBanner.timer = 2.2;
+            topShoutBanner.maxTimer = 2.2;
             panicLevel = clamp(panicLevel + 8, 0, 100);
           }
         }, 600);
@@ -2521,8 +2573,8 @@ function render() {
       ctx.translate(bx, by);
       ctx.scale(bubbleScale, bubbleScale);
 
-      // Measure text for bubble size
-      const fontSize = panicLevel > 60 ? 16 : panicLevel > 30 ? 14 : 12;
+      // Measure text for bubble size - bigger for visibility
+      const fontSize = panicLevel > 60 ? 20 : panicLevel > 30 ? 18 : 15;
       ctx.font = 'bold ' + fontSize + 'px "Segoe UI", system-ui, sans-serif';
       const textW = ctx.measureText(ownerSpeechBubble.text).width;
       const padX = 14, padY = 10;
@@ -2622,6 +2674,66 @@ function render() {
     }
   }
 
+  // ===== OWNER SHOUT BANNER at top of screen =====
+  if (topShoutBanner.timer > 0 && topShoutBanner.text) {
+    const banAlpha = Math.min(1, topShoutBanner.timer / 0.4);
+    const banEnter = Math.min(1, (topShoutBanner.maxTimer - topShoutBanner.timer) * 4);
+    ctx.save();
+    ctx.globalAlpha = banAlpha;
+
+    // Banner background - slides down from top
+    const banY = 80 + (1 - banEnter) * -60;
+    const banFontSize = panicLevel > 60 ? 26 : panicLevel > 30 ? 22 : 18;
+    ctx.font = 'bold ' + banFontSize + 'px "Segoe UI", system-ui, sans-serif';
+    const banTextW = ctx.measureText(topShoutBanner.text).width;
+    const banPadX = 24, banPadY = 14;
+    const banW = Math.min(W - 20, banTextW + banPadX * 2);
+    const banH = banFontSize + banPadY * 2;
+
+    // Shake effect at high panic
+    const banShk = panicLevel > 50 ? Math.sin(gameTime * 25) * (panicLevel / 30) : 0;
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.roundRect(W/2 - banW/2 + 2 + banShk, banY - banH/2 + 2, banW, banH, 14);
+    ctx.fill();
+
+    // Background - white with colored border based on panic
+    const banBorderColor = panicLevel > 60 ? '#FF3333' : panicLevel > 30 ? '#FF8800' : '#4A90D9';
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = banBorderColor;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(W/2 - banW/2 + banShk, banY - banH/2, banW, banH, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    // Owner emoji on left
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ownerGender === 'female' ? '👩' : '👨', W/2 - banW/2 + 22 + banShk, banY);
+
+    // Speech text
+    ctx.font = 'bold ' + banFontSize + 'px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = panicLevel > 60 ? '#cc0000' : panicLevel > 30 ? '#c0392b' : '#2c3e50';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(topShoutBanner.text, W/2 + 8 + banShk, banY);
+
+    // Exclamation effects at high panic
+    if (panicLevel > 60) {
+      ctx.fillStyle = '#FF3333';
+      ctx.font = 'bold 18px sans-serif';
+      const et = gameTime * 6;
+      ctx.fillText('❗', W/2 + banW/2 - 10 + Math.sin(et)*4 + banShk, banY - 6 + Math.cos(et)*3);
+      ctx.fillText('😱', W/2 - banW/2 + 2 + Math.cos(et)*3 + banShk, banY - 10 + Math.sin(et)*4);
+    }
+
+    ctx.restore();
+  }
+
   ctx.restore();
 }
 
@@ -2629,13 +2741,26 @@ function render() {
 
 function startGame() {
   ensureAudio();
-  if (typeof speechSynthesis !== 'undefined') speechSynthesis.getVoices();
+  // Preload speech voices - some browsers need this called multiple times
+  if (typeof speechSynthesis !== 'undefined') {
+    speechSynthesis.cancel();
+    speechSynthesis.getVoices();
+  }
   initGame();
   state = 'playing';
   panicLevel = 12;
   tryPlayMusic();
-  // Owner calls out once at the start, then occasionally
-  setTimeout(() => { shoutName(); }, 800);
+  // Owner calls out right away - try multiple times to ensure it fires
+  setTimeout(function() { shoutName(); }, 500);
+  setTimeout(function() {
+    // If first shout didn't work (speech not ready), try again
+    if (topShoutBanner.timer <= 0) shoutName();
+  }, 1500);
+  setTimeout(function() {
+    // Second callout a few seconds in
+    lastShoutTime = 0; // reset cooldown
+    shoutName();
+  }, 4000);
   document.getElementById('menuScreen').classList.remove('active');
   document.getElementById('gameOverScreen').classList.remove('active');
   document.getElementById('hud').classList.add('active');

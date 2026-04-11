@@ -261,7 +261,7 @@ function preloadVoiceClips() {
 function playVoiceClip(category, volume) {
   var now = Date.now();
   // Don't overlap voice clips - minimum 600ms gap
-  if (now - lastVoicePlayTime < 600) return;
+  if (now - lastVoicePlayTime < 200) return;
   
   var gender = ownerGender || 'male';
   var clip = voiceAudioCache[gender][category];
@@ -553,7 +553,7 @@ function spawnSplash(x, y) {
 
 function shoutName() {
   var now = Date.now();
-  var cooldown = panicLevel > 70 ? 2000 : panicLevel > 40 ? 2800 : 3500;
+  var cooldown = panicLevel > 70 ? 1200 : panicLevel > 40 ? 1800 : 2500;
   if (now - lastShoutTime < cooldown) return;
   lastShoutTime = now;
   lastVoiceTime = now;
@@ -1802,7 +1802,7 @@ function update(dt) {
     shoutName();
   }
   // Force a shout every 3-4 seconds if nothing else triggered one
-  if (Date.now() - lastShoutTime > 3500) {
+  if (Date.now() - lastShoutTime > 2500) {
     shoutName();
   }
 
@@ -2666,6 +2666,17 @@ function render() {
 
 function startGame() {
   ensureAudio();
+  // IMMEDIATELY play a voice clip on start - this is the user's click so audio is unlocked
+  preloadVoiceClips();
+  try {
+    var startClip = new Audio(VOICE_CLIPS[ownerGender || 'male']['calm']);
+    startClip.volume = 1.0;
+    startClip.play().then(function() {
+      console.log('[VOICE] ✅ Start clip played successfully!');
+    }).catch(function(e) {
+      console.log('[VOICE] ❌ Start clip failed:', e.message);
+    });
+  } catch(e) { console.log('[VOICE] Start error:', e); }
   // Preload voice clips for the selected gender
   preloadVoiceClips();
   initGame();

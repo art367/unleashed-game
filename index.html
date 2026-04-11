@@ -298,11 +298,16 @@ function preloadVoiceClips() {
 
 function playVoiceClip(category, volume) {
   var now = Date.now();
-  // Don't overlap voice clips - minimum 600ms gap
+  // Don't overlap voice clips
   if (now - lastVoicePlayTime < 200) return;
   
+  // Ensure AudioContext is active (browsers suspend it after inactivity)
+  if (audioCtx && audioCtx.state === 'suspended') {
+    try { audioCtx.resume(); } catch(e) {}
+  }
+  
   var gender = ownerGender || 'male';
-  var clip = voiceAudioCache[gender][category];
+  var clip = voiceAudioCache[gender] && voiceAudioCache[gender][category];
   
   if (!clip) {
     console.log('[VOICE] No clip for', gender, category);
@@ -327,8 +332,11 @@ function playVoiceClip(category, volume) {
         console.log('[VOICE] Play failed, retrying...', e.message);
         // Retry once after a short delay (helps with autoplay restrictions)
         setTimeout(function() {
-          try { playable.play(); } catch(e2) {}
-        }, 100);
+          try {
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            playable.play();
+          } catch(e2) {}
+        }, 150);
       });
     }
     currentVoiceAudio = playable;
@@ -597,6 +605,14 @@ function shoutName() {
     lastShoutTime = now;
     lastVoiceTime = now;
     
+    // Ensure audio context is alive (browsers suspend after inactivity)
+    if (audioCtx && audioCtx.state === 'suspended') {
+      try { audioCtx.resume(); } catch(e) {}
+    }
+    
+    var boyGirl = (dogGender === 'girl' ? 'girl' : 'boy');
+    var heShe = (dogGender === 'girl' ? 'she' : 'he');
+    
     // Pick a contextual line based on panic level
     var lines;
     if (panicLevel > 70) {
@@ -607,26 +623,36 @@ function shoutName() {
         dogName + '!! I SAID COME HERE!!',
         'JESUS CHRIST ' + dogName + '!!',
         dogName + '!! STOP RIGHT NOW!!',
-        'OH GOD WHAT HAS HE DONE NOW!!'
+        'OH GOD WHAT HAS ' + heShe.toUpperCase() + ' DONE NOW!!',
+        'FOR FUCK SAKE ' + dogName + '!!',
+        'BLOODY DOG!!',
+        'OH THAT\'S NOT MY DOG!!',
+        dogName + '!! YOU BLOODY MENACE!!',
+        'FOR GOD SAKE STOP THAT DOG!!',
+        'I NEVER WANTED A DOG!!',
+        'OH SHIT ' + dogName + ' NO!!'
       ];
     } else if (panicLevel > 40) {
       lines = [
-        dogName + '! NO! Bad dog!',
+        dogName + '! NO! Bad ' + boyGirl + '!',
         dogName + '! Come back here!',
         dogName + '! Leave it!',
         'Oh god ' + dogName + '!',
         dogName + '! STOP!',
         dogName + '! Drop it!',
-        'What are you doing ' + dogName + '?!'
+        'What are you doing ' + dogName + '?!',
+        'Bloody hell ' + dogName + '!',
+        dogName + '! I swear to god!',
+        'Oh for fuck sake ' + dogName + '!'
       ];
     } else {
       lines = [
-        dogName + '! Come here ' + (dogGender === 'girl' ? 'girl' : 'boy') + '!',
+        dogName + '! Come here ' + boyGirl + '!',
         dogName + '! Come back!',
         dogName + '! Walkies!',
-        dogName + '! Here ' + (dogGender === 'girl' ? 'girl' : 'boy') + '!',
+        dogName + '! Here ' + boyGirl + '!',
         dogName + '! Want a treat?',
-        dogName + '! Come on, good ' + (dogGender === 'girl' ? 'girl' : 'boy') + '!'
+        dogName + '! Come on, good ' + boyGirl + '!'
       ];
     }
     
@@ -643,7 +669,6 @@ function speakLine(text, rate, pitch, priority) {
     if (!text) return;
     var now = Date.now();
     if (now - lastVoicePlayTime < 300) return;
-    lastVoicePlayTime = now;
     
     // Map text to a voice clip category
     var lower = (text || '').toLowerCase();
@@ -656,15 +681,18 @@ function speakLine(text, rate, pitch, priority) {
     else if (lower.indexOf('eat') >= 0 || lower.indexOf('food') >= 0) cat = 'food';
     else if (lower.indexOf('poo') >= 0 || lower.indexOf('not here') >= 0) cat = 'poo';
     else if (lower.indexOf('tree') >= 0) cat = 'tree';
-    else if (lower.indexOf('never') >= 0) cat = 'never';
-    else if (lower.indexOf('oh my god') >= 0 || lower.indexOf('oh god') >= 0 || lower.indexOf('jesus') >= 0) cat = 'omg';
-    else if (lower.indexOf('stop') >= 0 || lower.indexOf('come back') >= 0 || lower.indexOf('somebody') >= 0) cat = 'panic';
-    else if (lower.indexOf('bad') >= 0 || lower.indexOf('leave it') >= 0 || lower.indexOf('drop') >= 0) cat = 'annoyed';
+    else if (lower.indexOf('never') >= 0 || lower.indexOf('i never') >= 0) cat = 'never';
+    else if (lower.indexOf('oh my god') >= 0 || lower.indexOf('oh god') >= 0 || lower.indexOf('jesus') >= 0 || lower.indexOf('oh shit') >= 0) cat = 'omg';
+    else if (lower.indexOf('fuck') >= 0 || lower.indexOf('bloody') >= 0 || lower.indexOf('menace') >= 0 || lower.indexOf('swear') >= 0) cat = 'panic';
+    else if (lower.indexOf('stop') >= 0 || lower.indexOf('come back') >= 0 || lower.indexOf('somebody') >= 0 || lower.indexOf('come here') >= 0) cat = 'panic';
+    else if (lower.indexOf('bad') >= 0 || lower.indexOf('leave it') >= 0 || lower.indexOf('drop') >= 0 || lower.indexOf('not my dog') >= 0) cat = 'annoyed';
     
     // PRIMARY: Use AI voice clips (proper male/female voices)
     var gender = ownerGender || 'male';
     var clip = voiceAudioCache[gender] && voiceAudioCache[gender][cat];
     if (clip) {
+      // Only update lastVoicePlayTime if we actually attempt to play
+      lastVoicePlayTime = now;
       playVoiceClip(cat, priority ? 1.0 : 0.85);
       console.log('[VOICE] Playing AI clip:', gender, cat);
       return;
@@ -673,6 +701,7 @@ function speakLine(text, rate, pitch, priority) {
     // FALLBACK: Use speechSynthesis only if no AI clip available
     if (typeof speechSynthesis !== 'undefined') {
       try {
+        lastVoicePlayTime = now;
         var voices = speechSynthesis.getVoices();
         var voice = null;
         

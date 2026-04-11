@@ -257,6 +257,7 @@ let panicLevel, gameSpeed, spawnTimer, difficultyTimer;
 let shakeX, shakeY, shakeDuration;
 let dashCooldown, dashActive, dashTimer;
 let lastVoiceTime = 0;
+let lastShoutTime = 0;
 let ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
 let gameTime = 0;
 
@@ -433,9 +434,11 @@ function getOwnerVoice() {
   }
 }
 
-function speakLine(text, rate, pitch) {
+function speakLine(text, rate, pitch, priority) {
   if (typeof speechSynthesis === 'undefined') return;
   try {
+    // Don't cancel a high-priority shout for a low-priority event line
+    if (!priority && speechSynthesis.speaking && Date.now() - lastShoutTime < 800) return;
     const utter = new SpeechSynthesisUtterance(text);
     utter.voice = getOwnerVoice();
     utter.rate = rate || 1.0;
@@ -449,9 +452,10 @@ function speakLine(text, rate, pitch) {
 
 function shoutName() {
   const now = Date.now();
-  // Cooldown: shorter at higher panic (rapid-fire yelling)
-  const cooldown = panicLevel > 70 ? 1200 : panicLevel > 40 ? 1500 : 2000;
-  if (now - lastVoiceTime < cooldown) return;
+  // Shout has its OWN cooldown so pickups/events don't block name-calling
+  const cooldown = panicLevel > 70 ? 1000 : panicLevel > 40 ? 1400 : 1800;
+  if (now - lastShoutTime < cooldown) return;
+  lastShoutTime = now;
   lastVoiceTime = now;
 
   let tier = PANIC_LINES[0];
@@ -467,7 +471,7 @@ function shoutName() {
   ownerSpeechBubble.maxTimer = 2.5;
 
   // Try speech synthesis with gender-appropriate voice
-  speakLine(line, tier.rate, tier.pitch);
+  speakLine(line, tier.rate, tier.pitch, true);  // high priority - don't get cancelled
 
   // Also play a "shout" sound effect so there's always audio feedback
   if (panicLevel > 50) {
@@ -1473,6 +1477,7 @@ function initGame() {
   dashTimer = 0;
   gameTime = 0;
   lastVoiceTime = 0;
+  lastShoutTime = 0;
   ownerSpeechBubble = { text:'', timer:0, maxTimer:2 };
 
   generateScenery(camera.y - H, camera.y + H * 3);
@@ -1682,8 +1687,13 @@ function update(dt) {
   // Voice lines
   // Owner constantly calls out - more frantic as panic rises
   // Always calling at minimum, screaming at max panic
-  const shoutChance = 0.5 + panicLevel / 40; // 0.5 at calm -> 3.0 at max panic
+  // Owner constantly calls out - more frantic as panic rises
+  const shoutChance = 0.8 + panicLevel / 25; // 0.8 at calm -> 4.8 at max panic
   if (Math.random() < dt * shoutChance) {
+    shoutName();
+  }
+  // Also force a shout every few seconds if nothing else triggered one
+  if (Date.now() - lastShoutTime > 3500) {
     shoutName();
   }
 

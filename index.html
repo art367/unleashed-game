@@ -36,9 +36,8 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 .chaos-rating{font-size:clamp(1.2rem,4vw,1.8rem);margin:10px 0;padding:8px 20px;border-radius:50px;font-weight:bold}
 .high-score-note{color:#FFD93D;font-size:0.9rem;margin:5px 0;animation:pulse 1s ease infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-#hud{position:absolute;top:0;left:0;width:100%;padding:10px 15px;display:none;pointer-events:none;z-index:5}
-#hud.active{display:flex;justify-content:space-between;align-items:flex-start}
-.hud-left,.hud-right{display:flex;flex-direction:column;gap:4px}
+#hud{position:absolute;top:0;left:0;width:100%;padding:0;display:none;pointer-events:none;z-index:5}
+#hud.active{display:flex;flex-direction:column;align-items:center}
 .hud-score{color:#fff;font-size:clamp(1rem,3vw,1.4rem);font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,0.5)}
 .hud-distance{color:rgba(255,255,255,0.7);font-size:clamp(0.65rem,1.8vw,0.8rem);text-shadow:0 1px 3px rgba(0,0,0,0.5)}
 .panic-bar-wrap{width:clamp(80px,20vw,120px);height:14px;background:rgba(0,0,0,0.4);border-radius:7px;overflow:hidden;border:1px solid rgba(255,255,255,0.2)}
@@ -140,15 +139,23 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 <button class="start-btn" onclick="restartGame()">🔄 RUN AGAIN!</button>
 </div>
 <div id="hud">
-<div class="hud-left">
-<div class="hud-score" id="hudScore" style="color:#FF6B6B">🐕 0</div>
-<div class="hud-score" id="hudOwnerScore" style="color:#4A90D9;font-size:clamp(0.8rem,2.2vw,1rem)">👤 0</div>
-<div class="hud-distance" id="hudDistance">0m</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;padding:8px 10px;gap:6px">
+<div style="flex:1;background:rgba(255,107,107,0.15);border:2px solid rgba(255,107,107,0.35);border-radius:12px;padding:6px 10px;text-align:center;backdrop-filter:blur(4px)">
+<div style="color:rgba(255,255,255,0.6);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px">🐕 DOG</div>
+<div class="hud-score" id="hudScore" style="color:#FF6B6B;font-size:clamp(1.2rem,3.5vw,1.8rem);margin:2px 0">0</div>
+<div id="hudDogAction" style="color:rgba(255,255,255,0.5);font-size:0.6rem;height:14px;overflow:hidden"></div>
 </div>
-<div class="hud-right">
-<div class="panic-label">Owner Panic</div>
-<div class="panic-bar-wrap"><div class="panic-bar" id="panicBar"></div></div>
-<div class="mute-btn" id="muteBtn" onclick="toggleMute()" style="color:rgba(255,255,255,0.6);font-size:1.2rem;cursor:pointer;pointer-events:auto;margin-top:4px;text-align:right">🔊</div>
+<div style="display:flex;flex-direction:column;align-items:center;min-width:70px;padding-top:2px">
+<div class="hud-distance" id="hudDistance" style="color:rgba(255,255,255,0.8);font-size:clamp(0.7rem,2vw,0.9rem);font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,0.5)">0m</div>
+<div class="panic-label" style="margin-top:4px">Owner Panic</div>
+<div class="panic-bar-wrap" style="width:70px"><div class="panic-bar" id="panicBar"></div></div>
+<div class="mute-btn" id="muteBtn" onclick="toggleMute()" style="color:rgba(255,255,255,0.6);font-size:1rem;cursor:pointer;pointer-events:auto;margin-top:3px">🔊</div>
+</div>
+<div style="flex:1;background:rgba(74,144,217,0.15);border:2px solid rgba(74,144,217,0.35);border-radius:12px;padding:6px 10px;text-align:center;backdrop-filter:blur(4px)">
+<div style="color:rgba(255,255,255,0.6);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px">👤 OWNER</div>
+<div class="hud-score" id="hudOwnerScore" style="color:#4A90D9;font-size:clamp(1.2rem,3.5vw,1.8rem);margin:2px 0">0</div>
+<div id="hudOwnerAction" style="color:rgba(255,255,255,0.5);font-size:0.6rem;height:14px;overflow:hidden"></div>
+</div>
 </div>
 </div>
 <div class="combo-display" id="comboDisplay"></div>
@@ -225,7 +232,7 @@ let highScore = parseInt(localStorage.getItem('unleashed_high') || '0');
 
 // Game objects
 let dog, owner, camera;
-let animals = [], obstacles = [], pickups = [], particles = [], floatTexts = [];
+let animals = [], obstacles = [], pickups = [], particles = [], floatTexts = [], parkKeepers = [];
 let grassStripes = [], trees = [], scenery = [];
 
 // Game metrics
@@ -237,6 +244,8 @@ let poosPickedUp = 0;
 let caughtBreakdown = { squirrel:0, duck:0, deer:0, dog:0 };
 let maxCombo = 0;
 let humansHit = 0;
+let caughtByKeeper = false;
+let parkKeeperSpawnTimer = 0;
 let pooTimer = 0; // countdown to next poo
 let dogPooing = false; // is dog currently squatting?
 let pooSquatTimer = 0; // how long the squat lasts
@@ -997,6 +1006,84 @@ function getPathCenterX(worldY) {
     + Math.sin(worldY * 0.007 + 0.5) * W * 0.04;
 }
 
+function drawParkKeeper(x, y, phase) {
+  const s = 2.8; // scale
+  const bob = Math.sin(phase * 3) * 2;
+  ctx.save();
+  ctx.translate(x, y + bob);
+
+  // Legs (dark green trousers)
+  ctx.strokeStyle = '#2E5A2E';
+  ctx.lineWidth = 5*s; ctx.lineCap = 'round';
+  const lp = phase * 4;
+  ctx.beginPath(); ctx.moveTo(-3*s, 5*s); ctx.lineTo(-3*s + Math.sin(lp)*5*s, 18*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(3*s, 5*s); ctx.lineTo(3*s + Math.sin(lp+Math.PI)*5*s, 18*s); ctx.stroke();
+
+  // Boots
+  ctx.fillStyle = '#3A2A1A';
+  ctx.beginPath(); ctx.ellipse(-3*s + Math.sin(lp)*5*s, 18*s, 4*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(3*s + Math.sin(lp+Math.PI)*5*s, 18*s, 4*s, 2*s, 0, 0, Math.PI*2); ctx.fill();
+
+  // Body (green ranger vest)
+  ctx.fillStyle = '#3A7D3A';
+  ctx.beginPath(); ctx.roundRect(-7*s, -10*s, 14*s, 18*s, 3*s); ctx.fill();
+  // Badge
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath(); ctx.arc(4*s, -4*s, 2.5*s, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#DAA520';
+  ctx.font = 'bold ' + (3*s) + 'px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('★', 4*s, -3.8*s);
+
+  // Arms reaching out to grab!
+  ctx.strokeStyle = '#FDBCB4';
+  ctx.lineWidth = 4*s;
+  const armWave = Math.sin(phase * 6) * 0.3;
+  ctx.beginPath(); ctx.moveTo(-7*s, -4*s); ctx.lineTo(-14*s + Math.sin(phase*5)*3*s, -8*s + armWave*5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(7*s, -4*s); ctx.lineTo(14*s + Math.sin(phase*5+1)*3*s, -8*s - armWave*5); ctx.stroke();
+  // Grabbing hands
+  ctx.fillStyle = '#FDBCB4';
+  ctx.beginPath(); ctx.arc(-14*s + Math.sin(phase*5)*3*s, -8*s + armWave*5, 3*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(14*s + Math.sin(phase*5+1)*3*s, -8*s - armWave*5, 3*s, 0, Math.PI*2); ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#FDBCB4';
+  ctx.beginPath(); ctx.arc(0, -15*s, 6*s, 0, Math.PI*2); ctx.fill();
+
+  // Ranger hat (wide brim flat top)
+  ctx.fillStyle = '#5A3E28';
+  // Brim
+  ctx.beginPath(); ctx.ellipse(0, -19*s, 10*s, 2.5*s, 0, 0, Math.PI*2); ctx.fill();
+  // Crown
+  ctx.fillStyle = '#6B4C33';
+  ctx.beginPath(); ctx.roundRect(-5*s, -25*s, 10*s, 7*s, [3*s, 3*s, 0, 0]); ctx.fill();
+
+  // Face - stern expression
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold ' + (3*s) + 'px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  // Eyes (angry brows)
+  ctx.beginPath(); ctx.arc(-2.5*s, -15.5*s, 1*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(2.5*s, -15.5*s, 1*s, 0, Math.PI*2); ctx.fill();
+  // Angry eyebrows
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5*s;
+  ctx.beginPath(); ctx.moveTo(-4.5*s, -17.5*s); ctx.lineTo(-1.5*s, -17*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(4.5*s, -17.5*s); ctx.lineTo(1.5*s, -17*s); ctx.stroke();
+  // Stern mouth
+  ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 1.2*s;
+  ctx.beginPath(); ctx.moveTo(-2*s, -12.5*s); ctx.lineTo(2*s, -12.5*s); ctx.stroke();
+
+  // Warning text above (flashing)
+  if (Math.sin(phase * 8) > 0) {
+    ctx.fillStyle = '#FF0000';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠️ KEEPER ⚠️', 0, -30*s);
+  }
+
+  ctx.restore();
+}
+
 function drawBackground(camY) {
   // Sky gradient
   const grad = ctx.createLinearGradient(0, 0, 0, H);
@@ -1319,6 +1406,16 @@ function drawPickup(p, camY) {
 }
 // ==================== GAME INITIALIZATION ====================
 
+// HUD flash helpers for scoring feedback
+function hudDogFlash(text) {
+  const el = document.getElementById('hudDogAction');
+  if (el) { el.textContent = text; el.style.color = '#FFD93D'; setTimeout(() => { el.textContent = ''; }, 1200); }
+}
+function hudOwnerFlash(text) {
+  const el = document.getElementById('hudOwnerAction');
+  if (el) { el.textContent = text; el.style.color = '#7CB9E8'; setTimeout(() => { el.textContent = ''; }, 1200); }
+}
+
 function initGame() {
   const breed = BREEDS[selectedBreed];
   dogName = document.getElementById('dogNameInput').value.trim().toUpperCase() || 'FENTON';
@@ -1364,6 +1461,9 @@ function initGame() {
   combo = 0;
   comboTimer = 0;
   panicLevel = 0;
+  parkKeepers = [];
+  caughtByKeeper = false;
+  parkKeeperSpawnTimer = 0;
   gameSpeed = 2.5;
   spawnTimer = 0;
   difficultyTimer = 0;
@@ -1604,6 +1704,32 @@ function update(dt) {
     if (Math.random() < 0.2) spawnPickup();
   }
 
+  // Park keeper spawning - starts after 200m, gets more frequent
+  parkKeeperSpawnTimer += dt;
+  if (distance > 200 && parkKeeperSpawnTimer > Math.max(4, 12 - distance / 300)) {
+    parkKeeperSpawnTimer = 0;
+    if (parkKeepers.length < 2 && Math.random() < 0.4) {
+      const spawnY2 = camera.y - 80;
+      const kx = getPathCenterX(spawnY2) + rand(-W*0.15, W*0.15);
+      parkKeepers.push({
+        x: kx, y: spawnY2,
+        vx: 0, vy: rand(0.3, 0.8),
+        phase: rand(0, Math.PI*2),
+        radius: 35,
+        alive: true,
+        patrolDir: Math.random() < 0.5 ? 1 : -1,
+        patrolTimer: 0
+      });
+      // Warning!
+      showCombo('⚠️ PARK KEEPER SPOTTED!');
+      speakLine('Oh no! Park keeper! ' + dogName + ' COME HERE NOW!', 1.2, 1.4);
+      lastVoiceTime = Date.now();
+      ownerSpeechBubble.text = 'OH NO! PARK KEEPER!!';
+      ownerSpeechBubble.timer = 2.5;
+      ownerSpeechBubble.maxTimer = 2.5;
+    }
+  }
+
   // Generate more scenery
   const furthestScenery = scenery.length > 0 ? Math.min(...scenery.map(s => s.y)) : camera.y;
   if (camera.y - H < furthestScenery + H) {
@@ -1672,6 +1798,7 @@ function update(dt) {
       const points = a.points * multiplier;
       score += points;
       chaosPoints += a.points;
+      hudDogFlash(a.type.toUpperCase() + '!');
       panicLevel = clamp(panicLevel + 15 + (a.type === 'deer' ? 25 : 0), 0, 100);
 
       spawnParticles(a.x, a.y - camera.y, '#FFD93D', 12, 5, 0.6);
@@ -1794,8 +1921,28 @@ function update(dt) {
           ownerSpeechBubble.text = helpShouts[Math.floor(Math.random() * helpShouts.length)];
           ownerSpeechBubble.timer = 1.5;
           ownerSpeechBubble.maxTimer = 1.5;
+        } else if (ob.type === 'blanket') {
+          // Dog raids the picnic! Dog points!
+          score += 80;
+          owner.baseOffset -= 15;
+          panicLevel = clamp(panicLevel + 10, 0, 100);
+          spawnParticles(dog.x, dog.y - camera.y, '#FFD93D', 10, 4, 0.6);
+          spawnFloatText(dog.x, dog.y - camera.y - 20, '🐕+80 PICNIC RAID!', '#FF6B6B');
+          hudDogFlash('PICNIC!');
+          showCombo('🧺 PICNIC RAIDED!');
+          const picnicShouts = [
+            dogName + '!! THATS NOT YOUR FOOD!!',
+            'OH NO ' + dogName + '!! SOMEONES PICNIC!!',
+            'I AM SO SORRY!! ' + dogName + ' SPIT THAT OUT!',
+            dogName + '!! DROP THE SANDWICH!!'
+          ];
+          ownerSpeechBubble.text = picnicShouts[Math.floor(Math.random() * picnicShouts.length)];
+          ownerSpeechBubble.timer = 2.5;
+          ownerSpeechBubble.maxTimer = 2.5;
+          speakLine(ownerSpeechBubble.text, 1.1, 1.3);
+          lastVoiceTime = Date.now();
         } else {
-          // Blanket or bench - just a bump
+          // Bench - just a bump
           owner.baseOffset -= 15;
           panicLevel = clamp(panicLevel + 5, 0, 100);
           spawnParticles(dog.x, dog.y - camera.y, '#FF6B6B', 6, 2, 0.4);
@@ -1836,8 +1983,9 @@ function update(dt) {
           showCombo('🎾 FETCH!');
           break;
         case 'food':
-          score += 50;
-          spawnFloatText(p.x, psy, '+50 🍗', '#DAA520');
+          ownerScore += 50;
+          spawnFloatText(p.x, psy, '👤+50 🍗', '#4A90D9');
+          hudOwnerFlash('TREAT!');
           // Eating food triggers an urgent poo! Dog slows down, owner can catch up
           if (!dogPooing) {
             pooTimer = rand(1.5, 3.0); // poo coming VERY soon after eating
@@ -1888,7 +2036,9 @@ function update(dt) {
       lastVoiceTime = Date.now();
       
       panicLevel = clamp(panicLevel + 12, 0, 100);
-      score += 30;
+      score += 40;
+      spawnFloatText(dog.x, dog.y - camera.y - 40, '🐕+40 SPLASH!', '#FF6B6B');
+      hudDogFlash('SPLASH!');
       
       // Slow dog briefly in water
       gameSpeed = Math.max(1.5, gameSpeed - 0.3);
@@ -1927,6 +2077,57 @@ function update(dt) {
       s.splashed = false;
     }
   }
+
+  // Update park keepers
+  for (let pk of parkKeepers) {
+    if (!pk.alive) continue;
+    pk.phase += dt;
+    pk.patrolTimer += dt;
+    
+    // Patrol side to side on the path
+    if (pk.patrolTimer > rand(1.5, 3)) {
+      pk.patrolTimer = 0;
+      pk.patrolDir *= -1;
+    }
+    pk.vx = pk.patrolDir * 1.5;
+    
+    // Move toward dog if close
+    const dxk = dog.x - pk.x;
+    const dyk = (dog.y) - pk.y;
+    const distToD = Math.hypot(dxk, dyk);
+    if (distToD < 200) {
+      // Chase the dog!
+      pk.vx += (dxk / distToD) * 2.5;
+      pk.vy += (dyk / distToD) * 0.5;
+    }
+    
+    pk.x += pk.vx * effectiveSpeed * 0.3;
+    pk.y += pk.vy * effectiveSpeed * 0.3;
+    pk.x = clamp(pk.x, 20, W - 20);
+    
+    // Collision with dog = GAME OVER!
+    const pksy = pk.y - camera.y;
+    if (dist({ x:dog.x, y:dog.y - camera.y }, { x:pk.x, y:pksy }) < dog.radius + pk.radius) {
+      pk.alive = false;
+      caughtByKeeper = true;
+      sfx_hit();
+      addShake(10, 0.5);
+      spawnParticles(dog.x, dog.y - camera.y, '#FF0000', 20, 6, 0.8);
+      showCombo('🚨 CAUGHT BY KEEPER! 🚨');
+      
+      ownerSpeechBubble.text = 'Oh thank GOD! The keeper got ' + dogName + '!';
+      ownerSpeechBubble.timer = 3.0;
+      ownerSpeechBubble.maxTimer = 3.0;
+      
+      // Big owner bonus for keeper catching the dog
+      ownerScore += 200;
+      spawnFloatText(dog.x, dog.y - camera.y - 30, '👤+200 KEEPER CATCH!', '#4A90D9');
+      
+      gameOver();
+      return;
+    }
+  }
+  parkKeepers = parkKeepers.filter(pk => pk.alive && pk.y - camera.y < H + 100 && pk.y > camera.y - H);
 
   // Update particles
   for (let p of particles) {
@@ -2001,8 +2202,9 @@ function update(dt) {
       
       spawnParticles(dog.x, dog.y - camera.y, '#8B6914', 6, 2, 0.4);
       spawnFloatText(dog.x, dog.y - camera.y, '💩', '#8B6914');
-      score += 20; // Dog gets points for the audacity
-      spawnFloatText(dog.x, dog.y - camera.y - 20, '🐕+20', '#FF6B6B');
+      ownerScore += 30; // Dog slowing to poo = owner gains ground!
+      spawnFloatText(dog.x, dog.y - camera.y - 20, '👤+30 POO STOP!', '#4A90D9');
+      hudOwnerFlash('POO STOP!');
       panicLevel = clamp(panicLevel + 10, 0, 100);
       
       ownerSpeechBubble.text = 'OH FOR GODS SAKE ' + dogName + '!!';
@@ -2030,8 +2232,9 @@ function update(dt) {
     
     if (weeTimer <= 0) {
       dogWeeing = false;
-      score += 15;
-      spawnFloatText(dog.x, dog.y - camera.y, '🌳💦 +15', '#FFD700');
+      ownerScore += 25; // Dog stopped to wee = owner catches up!
+      spawnFloatText(dog.x, dog.y - camera.y, '👤+25 🌳💦 WEE STOP!', '#4A90D9');
+      hudOwnerFlash('WEE STOP!');
       
       const weeLines = [
         'Oh for GODS sake ' + dogName + '!',
@@ -2083,8 +2286,8 @@ function update(dt) {
   poos = poos.filter(p => !p.pickedUp && p.worldY > camera.y - H);
 
   // Update HUD
-  document.getElementById('hudScore').textContent = '🐕 ' + Math.floor(score);
-  document.getElementById('hudOwnerScore').textContent = '👤 ' + Math.floor(ownerScore);
+  document.getElementById('hudScore').textContent = Math.floor(score);
+  document.getElementById('hudOwnerScore').textContent = Math.floor(ownerScore);
   document.getElementById('hudDistance').textContent = Math.floor(distance) + 'm';
   const bar = document.getElementById('panicBar');
   bar.style.width = panicLevel + '%';
@@ -2138,6 +2341,14 @@ function render() {
   // Obstacles
   for (let ob of obstacles) {
     drawObstacle(ob, camY);
+  }
+
+  // Park Keepers
+  for (let pk of parkKeepers) {
+    if (!pk.alive) continue;
+    const pky = pk.y - camY;
+    if (pky < -80 || pky > H + 80) continue;
+    drawParkKeeper(pk.x, pky, pk.phase);
   }
 
   // Animals
@@ -2320,6 +2531,17 @@ function render() {
 
   // Distance indicator arrows at top
   if (state === 'playing' || state === 'gameover') {
+    // Indicators for off-screen park keepers
+    for (let pk of parkKeepers) {
+      if (!pk.alive) continue;
+      const pky = pk.y - camY;
+      if (pky < 0) {
+        ctx.fillStyle = '#FF0000';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚠️🧑‍✈️ KEEPER', clamp(pk.x, 30, W-30), 65);
+      }
+    }
     // Indicators for off-screen animals
     for (let a of animals) {
       if (!a.alive) continue;
@@ -2371,8 +2593,8 @@ function gameOver() {
     localStorage.setItem('unleashed_high', highScore.toString());
   }
 
-  // Title changes based on winner
-  document.getElementById('goTitle').textContent = dogWon ? 'CAUGHT!' : 'CAUGHT!';
+  // Title changes based on how game ended
+  document.getElementById('goTitle').textContent = caughtByKeeper ? 'BUSTED!' : 'CAUGHT!';
   
   // Dog vs Owner scores
   document.getElementById('goScore').textContent = finalScore;
@@ -2384,7 +2606,7 @@ function gameOver() {
   
   // Owner info
   const pooRate = totalPoos > 0 ? Math.floor((poosPickedUp / totalPoos) * 100) : 100;
-  document.getElementById('goOwnerInfo').textContent = pooRate + '% poo pickup rate';
+  document.getElementById('goOwnerInfo').textContent = (caughtByKeeper ? 'Keeper caught ' + dogName + '! ' : '') + pooRate + '% poo pickup rate';
 
   // Winner banner
   const banner = document.getElementById('goWinnerBanner');
@@ -2428,7 +2650,9 @@ function gameOver() {
 
   // Dynamic subtitle based on what happened
   let subtitle;
-  if (caughtBreakdown.deer > 0 && dogWon)
+  if (caughtByKeeper)
+    subtitle = 'The park keeper nabbed ' + dogName + '! No more chaos today.';
+  else if (caughtBreakdown.deer > 0 && dogWon)
     subtitle = dogName + ' caught the deer and won. Legend.';
   else if (totalPoos > 3 && poosPickedUp === totalPoos)
     subtitle = 'Owner bagged every single poo. Respect.';

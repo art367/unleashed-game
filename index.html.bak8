@@ -44,10 +44,6 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 .panic-bar{height:100%;width:0%;border-radius:7px;transition:width 0.3s,background 0.3s}
 .panic-label{color:rgba(255,255,255,0.6);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
 .combo-display{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#FFD93D;font-size:2rem;font-weight:bold;text-shadow:0 0 20px rgba(255,217,61,0.5);pointer-events:none;opacity:0;transition:none}
-.poo-bag-btn{position:absolute;bottom:15%;right:10%;width:70px;height:70px;border-radius:50%;background:rgba(139,105,20,0.85);border:3px solid #FFD93D;color:#fff;font-size:1.8rem;cursor:pointer;pointer-events:auto;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:15;animation:pooBounce 0.5s ease infinite;box-shadow:0 0 20px rgba(139,105,20,0.6);-webkit-tap-highlight-color:transparent;touch-action:manipulation;line-height:1}
-.poo-bag-btn .bag-count{font-size:0.55rem;color:#FFD93D;font-weight:bold;letter-spacing:0.5px;margin-top:1px}
-.poo-bag-btn.active{display:flex}
-@keyframes pooBounce{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
 </style>
 </head>
 <body>
@@ -102,7 +98,7 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 </div>
 </div>
 <button class="start-btn" onclick="startGame()">🐾 LET'S GO!</button>
-<div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px">Arrow keys / touch to move • Space / tap to dash • B to bag poo</div>
+<div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px">Arrow keys / touch to move • Space / tap to dash</div>
 </div>
 <div id="gameOverScreen" class="screen">
 <div class="go-title" id="goTitle">CAUGHT!</div>
@@ -140,10 +136,9 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 </div>
 <div style="background:rgba(139,105,20,0.15);border-radius:12px;padding:10px 16px;width:90%;max-width:500px;margin:4px 0">
 <div style="color:rgba(255,255,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;text-align:center">💩 Poo Report</div>
-<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+<div style="display:flex;gap:16px;justify-content:center">
 <div style="text-align:center"><div id="goPoos" style="color:#8B6914;font-size:1.3rem;font-weight:bold">0</div><div style="color:rgba(255,255,255,0.5);font-size:0.65rem">Dropped</div></div>
-<div style="text-align:center"><div id="goPlayerBagged" style="color:#6BCB77;font-size:1.3rem;font-weight:bold">0</div><div style="color:rgba(255,255,255,0.5);font-size:0.65rem">You Bagged</div></div>
-<div style="text-align:center"><div id="goOwnerBagged" style="color:#4A90D9;font-size:1.3rem;font-weight:bold">0</div><div style="color:rgba(255,255,255,0.5);font-size:0.65rem">Owner Bagged</div></div>
+<div style="text-align:center"><div id="goPooBagged" style="color:#4A90D9;font-size:1.3rem;font-weight:bold">0</div><div style="color:rgba(255,255,255,0.5);font-size:0.65rem">Bagged</div></div>
 <div style="text-align:center"><div id="goPooLeft" style="color:#FF6B6B;font-size:1.3rem;font-weight:bold">0</div><div style="color:rgba(255,255,255,0.5);font-size:0.65rem">Left Behind</div></div>
 </div>
 </div>
@@ -171,7 +166,6 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 </div>
 </div>
 <div class="combo-display" id="comboDisplay"></div>
-<div class="poo-bag-btn" id="pooBagBtn" onclick="bagNearestPoo()">🛍️<span class="bag-count" id="pooBagCount"></span></div>
 </div>
 <script>
 
@@ -426,7 +420,6 @@ let ownerScore;
 let poos = []; // dropped poos on the ground
 let totalPoos = 0;
 let poosPickedUp = 0;
-var playerBaggedPoos = 0;
 let caughtBreakdown = { squirrel:0, duck:0, deer:0, dog:0 };
 let maxCombo = 0;
 let humansHit = 0;
@@ -1634,7 +1627,6 @@ function initGame() {
   pooTimer = rand(12, 20);
   totalPoos = 0;
   poosPickedUp = 0;
-  playerBaggedPoos = 0;  // poos bagged by the player tapping the button
   caughtBreakdown = { squirrel:0, duck:0, deer:0, dog:0 };
   maxCombo = 0;
   humansHit = 0;
@@ -2451,7 +2443,6 @@ function update(dt) {
 
       spawnParticles(dog.x, dog.y - camera.y, '#8B6914', 6, 2, 0.4);
       spawnFloatText(dog.x, dog.y - camera.y, '💩', '#8B6914');
-      updatePooBagButton();
       ownerScore += 30; // Dog slowing to poo = owner gains ground!
       spawnFloatText(dog.x, dog.y - camera.y - 20, '👤+30 POO STOP!', '#4A90D9');
       hudOwnerFlash('POO STOP!');
@@ -2537,7 +2528,6 @@ function update(dt) {
     }
   }
   poos = poos.filter(p => !p.pickedUp && p.worldY > camera.y - H);
-  updatePooBagButton();
 
   // Update HUD
   document.getElementById('hudScore').textContent = Math.floor(score);
@@ -2791,10 +2781,6 @@ function startGame() {
 }
 
 function gameOver() {
-  // Hide poo bag button
-  var bagBtn = document.getElementById('pooBagBtn');
-  if (bagBtn) bagBtn.classList.remove('active');
-
   state = 'gameover';
   // Fade out music over 2 seconds on game over
   stopMusic();
@@ -2824,8 +2810,7 @@ function gameOver() {
 
   // Owner info
   const pooRate = totalPoos > 0 ? Math.floor((poosPickedUp / totalPoos) * 100) : 100;
-  const playerBagRate = totalPoos > 0 ? Math.floor((playerBaggedPoos / totalPoos) * 100) : 0;
-  document.getElementById('goOwnerInfo').textContent = (caughtByKeeper ? 'Keeper caught ' + dogName + '! ' : '') + pooRate + '% pickup rate' + (playerBaggedPoos > 0 ? ' (you bagged ' + playerBagRate + '%)' : '');
+  document.getElementById('goOwnerInfo').textContent = (caughtByKeeper ? 'Keeper caught ' + dogName + '! ' : '') + pooRate + '% poo pickup rate';
 
   // Winner banner
   const banner = document.getElementById('goWinnerBanner');
@@ -2854,8 +2839,7 @@ function gameOver() {
 
   // Poo report
   document.getElementById('goPoos').textContent = totalPoos;
-  document.getElementById('goPlayerBagged').textContent = playerBaggedPoos;
-  document.getElementById('goOwnerBagged').textContent = Math.max(0, poosPickedUp - playerBaggedPoos);
+  document.getElementById('goPooBagged').textContent = poosPickedUp;
   document.getElementById('goPooLeft').textContent = Math.max(0, totalPoos - poosPickedUp);
 
   // Chaos rating
@@ -2874,10 +2858,8 @@ function gameOver() {
     subtitle = 'The park keeper nabbed ' + dogName + '! No more chaos today.';
   else if (caughtBreakdown.deer > 0 && dogWon)
     subtitle = dogName + ' caught the deer and won. Legend.';
-  else if (totalPoos > 3 && playerBaggedPoos === totalPoos)
-    subtitle = 'You bagged every single poo. Responsible owner award! 🏆';
   else if (totalPoos > 3 && poosPickedUp === totalPoos)
-    subtitle = 'All poos bagged between you. Teamwork! 🤝';
+    subtitle = 'Owner bagged every single poo. Respect.';
   else if (totalPoos > 0 && poosPickedUp === 0)
     subtitle = totalPoos + ' poos left on the ground. Disgusting ' + dogName + '.';
   else if (caughtBreakdown.duck > 2)
@@ -2922,81 +2904,10 @@ window.addEventListener('keydown', e => {
     e.preventDefault();
     activateDash();
   }
-  if ((e.code === 'KeyB' || e.code === 'KeyP') && state === 'playing') {
-    bagNearestPoo();
-  }
   if (e.code === 'Space' && state === 'gameover') restartGame();
   if (e.code === 'Enter' && state === 'menu') startGame();
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
-
-function bagNearestPoo() {
-  if (state !== 'playing') return;
-  // Find nearest unbagged poo
-  var nearest = null;
-  var nearestDist = Infinity;
-  for (var i = 0; i < poos.length; i++) {
-    var p = poos[i];
-    if (p.pickedUp) continue;
-    var d = Math.abs(p.worldY - dog.y);
-    if (d < nearestDist) {
-      nearestDist = d;
-      nearest = p;
-    }
-  }
-  if (!nearest) return;
-  
-  nearest.pickedUp = true;
-  poosPickedUp++;
-  playerBaggedPoos++;
-  sfx_bagPickup();
-  
-  // Player bags it - DOG gets bonus points (responsible dog owner teamwork!)
-  var bagBonus = 50 + Math.floor(nearest.age * 10); // Quick bags = still good, old bags = more points
-  score += bagBonus;
-  
-  spawnParticles(nearest.x, nearest.worldY - camera.y, '#6BCB77', 10, 3, 0.5);
-  spawnFloatText(nearest.x, nearest.worldY - camera.y, '🛍️ BAGGED IT!', '#6BCB77');
-  spawnFloatText(nearest.x, nearest.worldY - camera.y - 22, '🐕+' + bagBonus, '#6BCB77');
-  
-  // Owner is pleased!
-  panicLevel = clamp(panicLevel - 20, 0, 100); // Even more calm than auto-bag
-  
-  var playerBagLines = [
-    'Oh thank GOD someone has a bag!',
-    'Good, at least we can bag it!',
-    'Quick, before anyone sees!',
-    'Right, bagged! Lets GO ' + dogName + '!',
-    'Phew! Disaster averted!',
-    'That was close! COME ON ' + dogName + '!'
-  ];
-  ownerSpeechBubble.text = playerBagLines[Math.floor(Math.random() * playerBagLines.length)];
-  ownerSpeechBubble.timer = 2.0;
-  ownerSpeechBubble.maxTimer = 2.0;
-  speakLine(ownerSpeechBubble.text, 1.0, 1.0);
-  
-  showCombo('🛍️ RESPONSIBLE OWNER!');
-  hudDogFlash('BAGGED!');
-  
-  // Update the bag button
-  updatePooBagButton();
-}
-
-function updatePooBagButton() {
-  var btn = document.getElementById('pooBagBtn');
-  var countEl = document.getElementById('pooBagCount');
-  if (!btn) return;
-  var unbaggedCount = 0;
-  for (var i = 0; i < poos.length; i++) {
-    if (!poos[i].pickedUp) unbaggedCount++;
-  }
-  if (unbaggedCount > 0 && state === 'playing') {
-    btn.classList.add('active');
-    countEl.textContent = 'BAG ' + unbaggedCount + '!';
-  } else {
-    btn.classList.remove('active');
-  }
-}
 
 function activateDash() {
   if (dashCooldown > 0 || dashActive) return;

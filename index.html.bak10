@@ -101,7 +101,6 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 <button class="dog-gender-btn" data-dog-gender="girl" onclick="selectDogGender(this)" style="background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.2);border-radius:10px;padding:6px 14px;color:#fff;font-size:0.85rem;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:manipulation">🐩 Girl</button>
 </div>
 </div>
-<button class="start-btn" onclick="showTutorial()" style="background:rgba(255,255,255,0.1);font-size:clamp(0.8rem,2.5vw,1rem);padding:8px 24px;margin-bottom:6px">📖 HOW TO PLAY</button>
 <button class="start-btn" onclick="startGame()">🐾 LET'S GO!</button>
 <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px">Arrow keys / touch to move • Space / tap to dash • B to bag poo</div>
 </div>
@@ -150,62 +149,6 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 <div class="high-score-note" id="highScoreNote" style="display:none">🏆 NEW HIGH SCORE!</div>
 <button class="start-btn" onclick="restartGame()">🐾 BACK TO MENU</button>
 </div>
-<div id="tutorialScreen" class="screen" style="overflow-y:auto;padding:20px">
-<div style="max-width:500px;margin:0 auto;text-align:left;line-height:1.6">
-<h1 style="text-align:center;margin-bottom:4px">📖 HOW TO PLAY</h1>
-<div style="text-align:center;color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:16px;font-style:italic">A guide nobody asked for but everyone needs</div>
-
-<div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px;margin-bottom:12px">
-<div style="font-size:1.1rem;font-weight:bold;margin-bottom:6px">🎮 Controls</div>
-<div>⬅️➡️ <b>Arrow keys</b> or <b>drag</b> to steer your unhinged dog</div>
-<div>⏫ <b>Space</b> or <b>tap</b> to DASH (for when you spot a duck and simply must)</div>
-<div>🛍️ <b>B key</b> or <b>tap the bag button</b> to pick up... evidence</div>
-</div>
-
-<div style="background:rgba(255,107,107,0.12);border-radius:12px;padding:14px;margin-bottom:12px">
-<div style="font-size:1.1rem;font-weight:bold;margin-bottom:6px">🐕 Dog Points (be chaotic)</div>
-<div>🐿️ Chase squirrels: <b>+100</b> (they had it coming)</div>
-<div>🦆 Terrorise ducks: <b>+120</b> (quack quack CHAOS)</div>
-<div>🦌 Chase deer: <b>+200</b> (the holy grail of naughtiness)</div>
-<div>🐕 Chase other dogs: <b>+80</b> (making friends, violently)</div>
-<div>🧺 Raid a picnic: <b>+100</b> (someone left sandwiches unattended)</div>
-<div>💦 Splash in ponds: <b>+30</b> (bonus wet dog smell)</div>
-<div>🌳 Wee on trees: Priceless (marking territory is an art form)</div>
-</div>
-
-<div style="background:rgba(74,144,217,0.12);border-radius:12px;padding:14px;margin-bottom:12px">
-<div style="font-size:1.1rem;font-weight:bold;margin-bottom:6px">👤 Owner Points (be responsible)</div>
-<div>🦴 Dog fetches bone: <b>+40</b> (good distraction!)</div>
-<div>🎾 Dog chases ball: <b>+80</b> (fetch! FETCH!)</div>
-<div>🍗 Dog eats treat: <b>+60</b> (at least it stopped running)</div>
-<div>🛍️ Bag a poo: <b>+30</b> (responsible dog ownership™)</div>
-<div>🧑 Human grabs dog: <b>+50</b> (thank you kind stranger!)</div>
-</div>
-
-<div style="background:rgba(255,165,0,0.12);border-radius:12px;padding:14px;margin-bottom:12px">
-<div style="font-size:1.1rem;font-weight:bold;margin-bottom:6px">⚠️ Watch Out For</div>
-<div>👮 <b>Park Keeper</b> — catches your dog = GAME OVER</div>
-<div>🏃 <b>Joggers & Cyclists</b> — they'll try to grab your dog</div>
-<div>💩 <b>Unbagged poos</b> — the shame! THE SHAME!</div>
-<div>📢 <b>Your owner</b> — getting closer every second. If they catch you... walkies over.</div>
-</div>
-
-<div style="background:rgba(255,217,61,0.12);border-radius:12px;padding:14px;margin-bottom:12px">
-<div style="font-size:1.1rem;font-weight:bold;margin-bottom:6px">🏆 Pro Tips</div>
-<div>• The longer you run, the faster everything gets. Good luck.</div>
-<div>• Combos multiply your chaos. Chain catches for MAXIMUM CARNAGE.</div>
-<div>• When the owner catches up, you'll hear them. Oh, you'll hear them.</div>
-<div>• Dashing uses stamina. Pugs can dash forever. Pugs know what's up.</div>
-<div>• The deer is worth 200 points. The deer is always worth it.</div>
-</div>
-
-<div style="text-align:center;margin-top:12px;color:rgba(255,255,255,0.5);font-size:0.8rem;font-style:italic">
-"I am NEVER bringing you to this park again!" — Every owner, every time
-</div>
-
-<button class="start-btn" onclick="hideTutorial()" style="margin-top:12px">🐾 GOT IT, LET'S GO!</button>
-</div>
-</div>
 <div id="hud">
 <div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;padding:8px 10px;gap:6px">
 <div style="flex:1;background:rgba(255,107,107,0.15);border:2px solid rgba(255,107,107,0.35);border-radius:12px;padding:6px 10px;text-align:center;backdrop-filter:blur(4px)">
@@ -252,16 +195,11 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 
 // ==================== CONSTANTS & CONFIG ====================
 const BREEDS = {
-  labrador: { name:'Labrador', speed:1.0, stamina:1.3, agility:1.0, color:'#D4A843', darkColor:'#B8922A', earColor:'#C49B35', scale:2.2,
-    bodyW:14, bodyH:10, headW:9, headH:8, snoutW:5, snoutH:4, legW:3, earW:4, earH:7, earDrop:true, tailCurve:1.0, spots:false, wrinkles:false },
-  greyhound: { name:'Greyhound', speed:1.35, stamina:0.8, agility:0.95, color:'#C4A882', darkColor:'#A89070', earColor:'#B09575', scale:2.3,
-    bodyW:18, bodyH:7, headW:7, headH:7, snoutW:7, snoutH:3, legW:2, earW:3, earH:5, earDrop:false, tailCurve:0.5, spots:false, wrinkles:false },
-  terrier: { name:'Terrier', speed:0.95, stamina:1.0, agility:1.35, color:'#8B7355', darkColor:'#6B5A42', earColor:'#7A6548', scale:1.8,
-    bodyW:12, bodyH:9, headW:8, headH:8, snoutW:4, snoutH:3, legW:3, earW:4, earH:5, earDrop:false, tailCurve:1.5, spots:false, wrinkles:false },
-  pug: { name:'Pug', speed:0.7, stamina:1.5, agility:0.85, color:'#D2B48C', darkColor:'#A0845C', earColor:'#8B7355', scale:1.6,
-    bodyW:13, bodyH:12, headW:11, headH:10, snoutW:3, snoutH:3, legW:3.5, earW:3, earH:4, earDrop:true, tailCurve:2.5, spots:false, wrinkles:true },
-  greatdane: { name:'Great Dane', speed:1.15, stamina:0.7, agility:0.75, color:'#4A4A4A', darkColor:'#333333', earColor:'#3A3A3A', scale:3.0,
-    bodyW:16, bodyH:9, headW:9, headH:9, snoutW:6, snoutH:4, legW:2.5, earW:5, earH:8, earDrop:true, tailCurve:0.7, spots:true, wrinkles:false }
+  labrador: { name:'Labrador', speed:1.0, stamina:1.3, agility:1.0, color:'#D4A843', darkColor:'#B8922A', earColor:'#C49B35', scale:2.2 },
+  greyhound: { name:'Greyhound', speed:1.35, stamina:0.8, agility:0.95, color:'#C4A882', darkColor:'#A89070', earColor:'#B09575', scale:2.3 },
+  terrier: { name:'Terrier', speed:0.95, stamina:1.0, agility:1.35, color:'#8B7355', darkColor:'#6B5A42', earColor:'#7A6548', scale:1.8 },
+  pug: { name:'Pug', speed:0.7, stamina:1.5, agility:0.85, color:'#D2B48C', darkColor:'#A0845C', earColor:'#8B7355', scale:1.6 },
+  greatdane: { name:'Great Dane', speed:1.15, stamina:0.7, agility:0.75, color:'#4A4A4A', darkColor:'#333333', earColor:'#3A3A3A', scale:3.0 }
 };
 
 const COLORS = {
@@ -770,7 +708,7 @@ function showCombo(text) {
 
 function drawDog(x, y, breed, runPhase, isDashing) {
   const b = BREEDS[breed];
-  const s = b.scale || 1.6;
+  const s = BREEDS[breed].scale || 1.6;
   const bobY = Math.sin(runPhase * 8) * 2;
   const legPhase = runPhase * 8;
 
@@ -780,68 +718,44 @@ function drawDog(x, y, breed, runPhase, isDashing) {
   // Shadow
   ctx.fillStyle = 'rgba(0,0,0,0.15)';
   ctx.beginPath();
-  ctx.ellipse(0, 16*s, (b.bodyW||14)*s*0.9, 5*s, 0, 0, Math.PI*2);
+  ctx.ellipse(0, 16*s, 14*s, 5*s, 0, 0, Math.PI*2);
   ctx.fill();
 
-  // Tail (wagging) - curly for pug, thin for greyhound, normal for others
-  var tailWag = Math.sin(runPhase * 12) * 0.5;
-  var tc = b.tailCurve || 1.0;
+  // Tail (wagging)
+  const tailWag = Math.sin(runPhase * 12) * 0.5;
   ctx.save();
   ctx.translate(-10*s, -4*s);
   ctx.rotate(-0.8 + tailWag);
   ctx.strokeStyle = b.color;
-  ctx.lineWidth = (breed === 'greyhound' ? 2 : breed === 'pug' ? 2 : 3)*s;
+  ctx.lineWidth = 3*s;
   ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  if (breed === 'pug') {
-    // Curly pig tail
-    ctx.bezierCurveTo(-3*s, -6*s, -6*s, -12*s*tc, -2*s + Math.sin(runPhase*14)*2, -10*s);
-    ctx.bezierCurveTo(0, -14*s, -4*s, -8*s, -3*s, -6*s);
-  } else {
-    ctx.quadraticCurveTo(-6*s*tc, -10*s*tc, -4*s + Math.sin(runPhase*14)*3, -16*s*tc);
-  }
+  ctx.quadraticCurveTo(-6*s, -10*s, -4*s + Math.sin(runPhase*14)*3, -16*s);
   ctx.stroke();
   ctx.restore();
 
-  // Legs (animated) - thin for greyhound, stubby for pug
-  var legOff = 5*s;
+  // Legs (animated)
+  const legOffset = 5*s;
   ctx.strokeStyle = b.darkColor;
-  ctx.lineWidth = (b.legW||3)*s;
+  ctx.lineWidth = 3*s;
   ctx.lineCap = 'round';
-  var legLen = breed === 'greyhound' ? 20 : breed === 'pug' ? 12 : breed === 'greatdane' ? 22 : 16;
   // Back legs
-  var bl1 = Math.sin(legPhase) * legOff;
-  var bl2 = Math.sin(legPhase + Math.PI) * legOff;
-  ctx.beginPath(); ctx.moveTo(-6*s, 8*s); ctx.lineTo(-6*s + bl1*0.3, legLen*s); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-3*s, 8*s); ctx.lineTo(-3*s + bl2*0.3, legLen*s); ctx.stroke();
+  const bl1 = Math.sin(legPhase) * legOffset;
+  const bl2 = Math.sin(legPhase + Math.PI) * legOffset;
+  ctx.beginPath(); ctx.moveTo(-6*s, 8*s); ctx.lineTo(-6*s + bl1*0.3, 16*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-3*s, 8*s); ctx.lineTo(-3*s + bl2*0.3, 16*s); ctx.stroke();
   // Front legs
-  var fl1 = Math.sin(legPhase + Math.PI) * legOff;
-  var fl2 = Math.sin(legPhase) * legOff;
-  ctx.beginPath(); ctx.moveTo(6*s, 6*s); ctx.lineTo(6*s + fl1*0.3, legLen*s); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(9*s, 6*s); ctx.lineTo(9*s + fl2*0.3, legLen*s); ctx.stroke();
+  const fl1 = Math.sin(legPhase + Math.PI) * legOffset;
+  const fl2 = Math.sin(legPhase) * legOffset;
+  ctx.beginPath(); ctx.moveTo(6*s, 6*s); ctx.lineTo(6*s + fl1*0.3, 16*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(9*s, 6*s); ctx.lineTo(9*s + fl2*0.3, 16*s); ctx.stroke();
 
-  // Body - different shapes per breed
+  // Body
   ctx.fillStyle = b.color;
   ctx.beginPath();
-  ctx.ellipse(0, 2*s, (b.bodyW||14)*s, (b.bodyH||10)*s, 0, 0, Math.PI*2);
+  ctx.ellipse(0, 2*s, 14*s, 10*s, 0, 0, Math.PI*2);
   ctx.fill();
-
-  // Belly patch for labrador
-  if (breed === 'labrador') {
-    ctx.fillStyle = '#E8C860';
-    ctx.beginPath();
-    ctx.ellipse(0, 6*s, 8*s, 5*s, 0, 0, Math.PI*2);
-    ctx.fill();
-  }
-
-  // Spots for great dane
-  if (b.spots) {
-    ctx.fillStyle = '#666666';
-    ctx.beginPath(); ctx.arc(-5*s, -2*s, 3*s, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(4*s, 4*s, 2.5*s, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(-2*s, 6*s, 2*s, 0, Math.PI*2); ctx.fill();
-  }
 
   // Collar
   ctx.strokeStyle = '#FF6B6B';
@@ -849,142 +763,75 @@ function drawDog(x, y, breed, runPhase, isDashing) {
   ctx.beginPath();
   ctx.arc(8*s, -2*s, 6*s, -0.3, Math.PI+0.3);
   ctx.stroke();
-  // Tag
-  ctx.fillStyle = '#FFD700';
-  ctx.beginPath(); ctx.arc(8*s, 4*s, 2*s, 0, Math.PI*2); ctx.fill();
 
-  // Head - bigger and rounder for pug, elongated for greyhound
+  // Head
   ctx.fillStyle = b.color;
   ctx.beginPath();
-  ctx.ellipse(12*s, -4*s, (b.headW||9)*s, (b.headH||8)*s, breed === 'greyhound' ? 0.2 : 0.1, 0, Math.PI*2);
+  ctx.ellipse(12*s, -4*s, 9*s, 8*s, 0.1, 0, Math.PI*2);
   ctx.fill();
 
-  // Wrinkles for pug
-  if (b.wrinkles) {
-    ctx.strokeStyle = b.darkColor;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.4;
-    for (var w = 0; w < 3; w++) {
-      ctx.beginPath();
-      ctx.arc(12*s, (-6 + w*2)*s, 5*s, -0.5, 0.5);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  // Ears - different per breed!
-  var earFlap = isDashing ? -0.6 : Math.sin(runPhase * 6) * 0.15;
+  // Ears
+  const earFlap = isDashing ? -0.6 : Math.sin(runPhase * 6) * 0.15;
   ctx.fillStyle = b.earColor;
-
-  if (breed === 'greyhound') {
-    // Small pointed ears, upright
-    ctx.save(); ctx.translate(8*s, -10*s); ctx.rotate(-0.1 + earFlap*0.5);
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-2*s, -8*s); ctx.lineTo(3*s, -6*s); ctx.closePath(); ctx.fill();
-    ctx.restore();
-    ctx.save(); ctx.translate(14*s, -10*s); ctx.rotate(0.1 + earFlap*0.5);
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-2*s, -8*s); ctx.lineTo(3*s, -6*s); ctx.closePath(); ctx.fill();
-    ctx.restore();
-  } else if (breed === 'terrier') {
-    // Perky upright triangular ears
-    ctx.save(); ctx.translate(7*s, -10*s); ctx.rotate(-0.2 + earFlap);
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-3*s, -10*s); ctx.lineTo(4*s, -8*s); ctx.closePath(); ctx.fill();
-    ctx.restore();
-    ctx.save(); ctx.translate(15*s, -10*s); ctx.rotate(0.2 + earFlap);
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-3*s, -10*s); ctx.lineTo(4*s, -8*s); ctx.closePath(); ctx.fill();
-    ctx.restore();
-  } else if (breed === 'pug') {
-    // Tiny folded ears, very small
-    ctx.save(); ctx.translate(6*s, -10*s); ctx.rotate(-0.4 + earFlap);
-    ctx.beginPath(); ctx.ellipse(0, -2*s, 3*s, 3*s, -0.3, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-    ctx.save(); ctx.translate(16*s, -10*s); ctx.rotate(0.3 + earFlap);
-    ctx.beginPath(); ctx.ellipse(0, -2*s, 3*s, 3*s, 0.3, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-  } else {
-    // Floppy ears (labrador, great dane)
-    ctx.save(); ctx.translate(8*s, -10*s); ctx.rotate(-0.3 + earFlap);
-    ctx.beginPath(); ctx.ellipse(0, -4*s, (b.earW||4)*s, (b.earH||7)*s, -0.2, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-    ctx.save(); ctx.translate(14*s, -10*s); ctx.rotate(0.2 + earFlap);
-    ctx.beginPath(); ctx.ellipse(0, -4*s, (b.earW||4)*s, (b.earH||7)*s, 0.2, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-  }
-
-  // Snout - flat for pug, long for greyhound
-  ctx.fillStyle = breed === 'pug' ? b.color : b.darkColor;
-  var snoutX = breed === 'pug' ? 17 : breed === 'greyhound' ? 22 : 19;
+  // Left ear
+  ctx.save();
+  ctx.translate(8*s, -10*s);
+  ctx.rotate(-0.3 + earFlap);
   ctx.beginPath();
-  ctx.ellipse(snoutX*s, -2*s, (b.snoutW||5)*s, (b.snoutH||4)*s, 0, 0, Math.PI*2);
+  ctx.ellipse(0, -4*s, 4*s, 7*s, -0.2, 0, Math.PI*2);
   ctx.fill();
+  ctx.restore();
+  // Right ear
+  ctx.save();
+  ctx.translate(14*s, -10*s);
+  ctx.rotate(0.2 + earFlap);
+  ctx.beginPath();
+  ctx.ellipse(0, -4*s, 4*s, 7*s, 0.2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
 
-  // Pug flat face detail
-  if (breed === 'pug') {
-    ctx.fillStyle = b.darkColor;
-    ctx.beginPath();
-    ctx.ellipse(18*s, -1*s, 4*s, 3*s, 0, 0, Math.PI*2);
-    ctx.fill();
-  }
+  // Snout
+  ctx.fillStyle = b.darkColor;
+  ctx.beginPath();
+  ctx.ellipse(19*s, -2*s, 5*s, 4*s, 0, 0, Math.PI*2);
+  ctx.fill();
 
   // Nose
   ctx.fillStyle = '#2c2c2c';
-  var noseX = breed === 'pug' ? 19 : breed === 'greyhound' ? 27 : 23;
-  var noseW = breed === 'pug' ? 3 : 2.5;
   ctx.beginPath();
-  ctx.ellipse(noseX*s, -3*s, noseW*s, 2*s, 0, 0, Math.PI*2);
+  ctx.ellipse(23*s, -3*s, 2.5*s, 2*s, 0, 0, Math.PI*2);
   ctx.fill();
 
-  // Eyes - big and buggy for pug, sleek for greyhound
-  var eyeSize = breed === 'pug' ? 4 : breed === 'greyhound' ? 2.5 : 3;
-  var eyeX = breed === 'pug' ? 13 : 15;
+  // Eyes
   ctx.fillStyle = '#fff';
   ctx.beginPath();
-  ctx.ellipse(eyeX*s, -7*s, eyeSize*s, (eyeSize+0.5)*s, 0, 0, Math.PI*2);
+  ctx.ellipse(15*s, -7*s, 3*s, 3.5*s, 0, 0, Math.PI*2);
   ctx.fill();
   ctx.fillStyle = '#2c2c2c';
   ctx.beginPath();
-  ctx.ellipse((eyeX+1)*s, -7*s, (eyeSize*0.6)*s, (eyeSize*0.65)*s, 0, 0, Math.PI*2);
+  ctx.ellipse(16*s, -7*s, 1.8*s, 2*s, 0, 0, Math.PI*2);
   ctx.fill();
   ctx.fillStyle = '#fff';
   ctx.beginPath();
-  ctx.arc((eyeX+1.5)*s, -8*s, (eyeSize*0.25)*s, 0, Math.PI*2);
+  ctx.arc(16.5*s, -8*s, 0.7*s, 0, Math.PI*2);
   ctx.fill();
-
-  // Second eye for pug (wider set)
-  if (breed === 'pug') {
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.ellipse(8*s, -7*s, 3.5*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#2c2c2c';
-    ctx.beginPath(); ctx.ellipse(9*s, -7*s, 2*s, 2.3*s, 0, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(9.5*s, -8*s, 0.8*s, 0, Math.PI*2); ctx.fill();
-  }
 
   // Tongue (when running)
   ctx.fillStyle = '#FF8888';
-  var tongueLen = 4 + Math.sin(runPhase * 10) * 2;
-  var tongueX = breed === 'pug' ? 16 : 20;
+  const tongueLen = 4 + Math.sin(runPhase * 10) * 2;
   ctx.beginPath();
-  ctx.moveTo(tongueX*s, 0);
-  ctx.quadraticCurveTo((tongueX+2)*s, tongueLen*s, (tongueX-1)*s, (tongueLen+2)*s);
-  ctx.quadraticCurveTo((tongueX-3)*s, tongueLen*s, (tongueX-1)*s, 0);
+  ctx.moveTo(20*s, 0);
+  ctx.quadraticCurveTo(22*s, tongueLen*s, 19*s, (tongueLen+2)*s);
+  ctx.quadraticCurveTo(17*s, tongueLen*s, 19*s, 0);
   ctx.fill();
-
-  // Terrier beard/eyebrows
-  if (breed === 'terrier') {
-    ctx.fillStyle = '#A08060';
-    ctx.beginPath(); ctx.ellipse(18*s, 1*s, 4*s, 3*s, 0, 0, Math.PI*2); ctx.fill();
-    // Bushy eyebrows
-    ctx.fillStyle = b.earColor;
-    ctx.beginPath(); ctx.ellipse(14*s, -10*s, 3*s, 1.5*s, -0.2, 0, Math.PI*2); ctx.fill();
-  }
 
   // Dash effect
   if (isDashing) {
     ctx.strokeStyle = 'rgba(255,217,61,0.4)';
     ctx.lineWidth = 2;
-    for (var i = 0; i < 4; i++) {
-      var lx = -18*s - i * 8;
-      var ly = rand(-8, 8)*s;
+    for (let i = 0; i < 4; i++) {
+      const lx = -18*s - i * 8;
+      const ly = rand(-8, 8)*s;
       ctx.beginPath();
       ctx.moveTo(lx, ly);
       ctx.lineTo(lx - 12, ly);
@@ -2945,16 +2792,6 @@ function render() {
 }
 
 // ==================== GAME STATE MANAGEMENT ====================
-
-function showTutorial() {
-  document.getElementById('menuScreen').classList.remove('active');
-  document.getElementById('tutorialScreen').classList.add('active');
-}
-
-function hideTutorial() {
-  document.getElementById('tutorialScreen').classList.remove('active');
-  document.getElementById('menuScreen').classList.add('active');
-}
 
 function startGame() {
   ensureAudio();

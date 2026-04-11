@@ -90,6 +90,13 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 <button class="owner-gender-btn" data-gender="female" onclick="selectOwnerGender(this)" style="background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.2);border-radius:10px;padding:6px 14px;color:#fff;font-size:0.85rem;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:manipulation">👩 Female</button>
 </div>
 </div>
+<div class="name-input-wrap" style="gap:12px">
+<label>Dog:</label>
+<div style="display:flex;gap:8px">
+<button class="dog-gender-btn selected" data-dog-gender="boy" onclick="selectDogGender(this)" style="background:rgba(74,144,217,0.2);border:2px solid rgba(74,144,217,0.5);border-radius:10px;padding:6px 14px;color:#fff;font-size:0.85rem;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:manipulation">🐕 Boy</button>
+<button class="dog-gender-btn" data-dog-gender="girl" onclick="selectDogGender(this)" style="background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.2);border-radius:10px;padding:6px 14px;color:#fff;font-size:0.85rem;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:manipulation">🐩 Girl</button>
+</div>
+</div>
 <button class="start-btn" onclick="startGame()">🐾 LET'S GO!</button>
 <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px">Arrow keys / touch to move • Space / tap to dash</div>
 </div>
@@ -352,7 +359,7 @@ function getShoutCategory() {
 
 
 const CHAOS_RATINGS = [
-  { min:0, label:'Good Boy 😇', color:'#6BCB77' },
+  { min:0, label:'Good Boy 😇', labelGirl:'Good Girl 😇', color:'#6BCB77' },
   { min:200, label:'Naughty Pup 😏', color:'#FFD93D' },
   { min:500, label:'Park Menace 😈', color:'#FFA500' },
   { min:1000, label:'Chaos Agent 🔥', color:'#FF6B6B' },
@@ -367,6 +374,7 @@ let W, H;
 let state = 'menu'; // menu, playing, gameover
 let selectedBreed = 'labrador';
 let ownerGender = 'male';
+let dogGender = 'boy';
 let dogName = 'FENTON';
 let highScore = parseInt(localStorage.getItem('unleashed_high') || '0');
 
@@ -613,12 +621,12 @@ function shoutName() {
       ];
     } else {
       lines = [
-        dogName + '! Come here ' + (ownerGender === 'female' ? 'girl' : 'boy') + '!',
+        dogName + '! Come here ' + (dogGender === 'girl' ? 'girl' : 'boy') + '!',
         dogName + '! Come back!',
         dogName + '! Walkies!',
-        dogName + '! Here ' + (ownerGender === 'female' ? 'girl' : 'boy') + '!',
+        dogName + '! Here ' + (dogGender === 'girl' ? 'girl' : 'boy') + '!',
         dogName + '! Want a treat?',
-        dogName + '! Come on, good ' + (ownerGender === 'female' ? 'girl' : 'boy') + '!'
+        dogName + '! Come on, good ' + (dogGender === 'girl' ? 'girl' : 'boy') + '!'
       ];
     }
     
@@ -1724,6 +1732,24 @@ function selectOwnerGender(el) {
   }
 }
 
+function selectDogGender(el) {
+  tryPlayMusic();
+  document.querySelectorAll('.dog-gender-btn').forEach(function(b) {
+    b.classList.remove('selected');
+    b.style.background = 'rgba(255,255,255,0.1)';
+    b.style.borderColor = 'rgba(255,255,255,0.2)';
+  });
+  el.classList.add('selected');
+  dogGender = el.dataset.dogGender;
+  if (dogGender === 'boy') {
+    el.style.background = 'rgba(74,144,217,0.2)';
+    el.style.borderColor = 'rgba(74,144,217,0.5)';
+  } else {
+    el.style.background = 'rgba(232,160,191,0.2)';
+    el.style.borderColor = 'rgba(232,160,191,0.5)';
+  }
+}
+
 // ==================== SPAWNING ====================
 
 function spawnAnimal() {
@@ -2210,9 +2236,9 @@ function update(dt) {
           spawnFloatText(p.x, psy, '👤+60 🦴 DISTRACTED!', '#4A90D9');
           hudOwnerFlash('BONE!');
           showCombo('🦴 GOOD ' + dogName + '!');
-          speakLine('Good ' + (ownerGender === 'female' ? 'girl' : 'boy') + '! Thats a good ' + dogName + '!', 1.0, 1.0);
+          speakLine('Good ' + (dogGender === 'girl' ? 'girl' : 'boy') + '! Thats a good ' + dogName + '!', 1.0, 1.0);
           lastVoiceTime = Date.now();
-          ownerSpeechBubble.text = 'GOOD ' + (ownerGender === 'female' ? 'GIRL' : 'BOY') + '! STAY!';
+          ownerSpeechBubble.text = 'GOOD ' + (dogGender === 'girl' ? 'GIRL' : 'BOY') + '! STAY!';
           ownerSpeechBubble.timer = 1.5;
           ownerSpeechBubble.maxTimer = 1.5;
 
@@ -2227,7 +2253,7 @@ function update(dt) {
           spawnFloatText(p.x, psy, '👤+80 🎾 FETCH!', '#4A90D9');
           hudOwnerFlash('FETCH!');
           showCombo('🎾 FETCH BOY FETCH!');
-          speakLine(dogName + '! FETCH! Good ' + (ownerGender === 'female' ? 'girl' : 'boy') + '! BRING IT HERE!', 1.1, 1.1);
+          speakLine(dogName + '! FETCH! Good ' + (dogGender === 'girl' ? 'girl' : 'boy') + '! BRING IT HERE!', 1.1, 1.1);
           lastVoiceTime = Date.now();
           ownerSpeechBubble.text = 'FETCH ' + dogName + '! COME!';
           ownerSpeechBubble.timer = 2.0;
@@ -2873,7 +2899,7 @@ function gameOver() {
     if (chaosPoints >= r.min) rating = r;
   }
   const ratingEl = document.getElementById('chaosRating');
-  ratingEl.textContent = rating.label;
+  ratingEl.textContent = (dogGender === 'girl' && rating.labelGirl) ? rating.labelGirl : rating.label;
   ratingEl.style.background = rating.color + '33';
   ratingEl.style.color = rating.color;
 

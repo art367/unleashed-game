@@ -637,7 +637,32 @@ function speakLine(text, rate, pitch, priority) {
     if (now - lastVoicePlayTime < 300) return;
     lastVoicePlayTime = now;
     
-    // PRIMARY: Use speechSynthesis to say the EXACT game dialogue
+    // Map text to a voice clip category
+    var lower = (text || '').toLowerCase();
+    var cat = 'calm';
+    if (lower.indexOf('park keeper') >= 0) cat = 'parkkeeper';
+    else if (lower.indexOf('duck') >= 0) cat = 'ducks';
+    else if (lower.indexOf('squirrel') >= 0) cat = 'squirrels';
+    else if (lower.indexOf('good') >= 0 && (lower.indexOf('boy') >= 0 || lower.indexOf('girl') >= 0)) cat = 'goodboy';
+    else if (lower.indexOf('fetch') >= 0) cat = 'fetch';
+    else if (lower.indexOf('eat') >= 0 || lower.indexOf('food') >= 0) cat = 'food';
+    else if (lower.indexOf('poo') >= 0 || lower.indexOf('not here') >= 0) cat = 'poo';
+    else if (lower.indexOf('tree') >= 0) cat = 'tree';
+    else if (lower.indexOf('never') >= 0) cat = 'never';
+    else if (lower.indexOf('oh my god') >= 0 || lower.indexOf('oh god') >= 0 || lower.indexOf('jesus') >= 0) cat = 'omg';
+    else if (lower.indexOf('stop') >= 0 || lower.indexOf('come back') >= 0 || lower.indexOf('somebody') >= 0) cat = 'panic';
+    else if (lower.indexOf('bad') >= 0 || lower.indexOf('leave it') >= 0 || lower.indexOf('drop') >= 0) cat = 'annoyed';
+    
+    // PRIMARY: Use AI voice clips (proper male/female voices)
+    var gender = ownerGender || 'male';
+    var clip = voiceAudioCache[gender] && voiceAudioCache[gender][cat];
+    if (clip) {
+      playVoiceClip(cat, priority ? 1.0 : 0.85);
+      console.log('[VOICE] Playing AI clip:', gender, cat);
+      return;
+    }
+    
+    // FALLBACK: Use speechSynthesis only if no AI clip available
     if (typeof speechSynthesis !== 'undefined') {
       try {
         var voices = speechSynthesis.getVoices();
@@ -661,33 +686,13 @@ function speakLine(text, rate, pitch, priority) {
         utter.rate = rate || 1.1;
         utter.pitch = ownerGender === 'female' ? (pitch || 1.0) * 1.15 : (pitch || 1.0);
         utter.volume = 1.0;
-        
-        // Chrome bug workaround: resume speech synthesis
         speechSynthesis.resume();
         speechSynthesis.speak(utter);
-        console.log('[VOICE] Speaking:', text);
-        return;
+        console.log('[VOICE] speechSynthesis fallback:', text);
       } catch(e) {
-        console.log('[VOICE] speechSynthesis failed, trying clip fallback');
+        console.log('[VOICE] All voice methods failed');
       }
     }
-    
-    // FALLBACK: Use AI voice clip if speechSynthesis not available
-    var lower = (text || '').toLowerCase();
-    var cat = 'calm';
-    if (lower.indexOf('park keeper') >= 0) cat = 'parkkeeper';
-    else if (lower.indexOf('duck') >= 0) cat = 'ducks';
-    else if (lower.indexOf('squirrel') >= 0) cat = 'squirrels';
-    else if (lower.indexOf('good') >= 0 && (lower.indexOf('boy') >= 0 || lower.indexOf('girl') >= 0)) cat = 'goodboy';
-    else if (lower.indexOf('fetch') >= 0) cat = 'fetch';
-    else if (lower.indexOf('eat') >= 0 || lower.indexOf('food') >= 0) cat = 'food';
-    else if (lower.indexOf('poo') >= 0 || lower.indexOf('not here') >= 0) cat = 'poo';
-    else if (lower.indexOf('tree') >= 0) cat = 'tree';
-    else if (lower.indexOf('never') >= 0) cat = 'never';
-    else if (lower.indexOf('oh my god') >= 0 || lower.indexOf('oh god') >= 0) cat = 'omg';
-    else if (lower.indexOf('stop') >= 0 || lower.indexOf('come back') >= 0) cat = 'panic';
-    else if (lower.indexOf('bad') >= 0 || lower.indexOf('leave it') >= 0) cat = 'annoyed';
-    playVoiceClip(cat, priority ? 1.0 : 0.85);
   }
 
 

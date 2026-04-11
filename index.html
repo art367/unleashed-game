@@ -142,8 +142,7 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 <div style="color:rgba(255,255,255,0.5);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;text-align:center">💩 Poo Report</div>
 <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
 <div style="text-align:center"><div id="goPoos" style="color:#8B6914;font-size:1.3rem;font-weight:bold">0</div><div style="color:rgba(255,255,255,0.5);font-size:0.65rem">Dropped</div></div>
-<div style="text-align:center"><div id="goPlayerBagged" style="color:#6BCB77;font-size:1.3rem;font-weight:bold">0</div><div style="color:rgba(255,255,255,0.5);font-size:0.65rem">You Bagged</div></div>
-<div style="text-align:center"><div id="goOwnerBagged" style="color:#4A90D9;font-size:1.3rem;font-weight:bold">0</div><div style="color:rgba(255,255,255,0.5);font-size:0.65rem">Owner Bagged</div></div>
+<div style="text-align:center"><div id="goPooBagged" style="color:#6BCB77;font-size:1.3rem;font-weight:bold">0</div><div style="color:rgba(255,255,255,0.5);font-size:0.65rem">Bagged</div></div>
 <div style="text-align:center"><div id="goPooLeft" style="color:#FF6B6B;font-size:1.3rem;font-weight:bold">0</div><div style="color:rgba(255,255,255,0.5);font-size:0.65rem">Left Behind</div></div>
 </div>
 </div>
@@ -2854,8 +2853,7 @@ function gameOver() {
 
   // Poo report
   document.getElementById('goPoos').textContent = totalPoos;
-  document.getElementById('goPlayerBagged').textContent = playerBaggedPoos;
-  document.getElementById('goOwnerBagged').textContent = Math.max(0, poosPickedUp - playerBaggedPoos);
+  document.getElementById('goPooBagged').textContent = poosPickedUp;
   document.getElementById('goPooLeft').textContent = Math.max(0, totalPoos - poosPickedUp);
 
   // Chaos rating

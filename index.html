@@ -225,11 +225,14 @@ function getOwnerVoice() {
   if (typeof speechSynthesis === 'undefined') return null;
   var voices = speechSynthesis.getVoices();
   if (typeof ownerGender !== 'undefined' && ownerGender === 'female') {
-    return voices.find(function(v) { return v.lang.includes('en-GB') && v.name.toLowerCase().includes('female'); })
-      || voices.find(function(v) { return v.name.toLowerCase().includes('female') && v.lang.includes('en'); })
+    // Try to find a distinctly female voice - prioritize voices with female/woman/fiona/samantha/victoria/karen in the name
+    return voices.find(function(v) { return v.lang.includes('en') && /female|woman|fiona|samantha|victoria|karen|zira|hazel|susan/i.test(v.name); })
+      || voices.find(function(v) { return v.lang.includes('en-GB') && !/male|daniel|george|james/i.test(v.name) && /female|woman/i.test(v.name); })
+      || voices.find(function(v) { return v.lang.includes('en') && !/male|daniel|george|james/i.test(v.name) && v.name.toLowerCase().includes('female'); })
       || voices.find(function(v) { return v.lang.includes('en-GB'); })
       || voices.find(function(v) { return v.lang.includes('en'); });
   } else {
+    // Male voice - DO NOT CHANGE THIS
     return voices.find(function(v) { return v.lang.includes('en-GB') && v.name.toLowerCase().includes('male'); })
       || voices.find(function(v) { return v.name.toLowerCase().includes('male') && v.lang.includes('en'); })
       || voices.find(function(v) { return v.lang.includes('en-GB'); })
@@ -245,8 +248,15 @@ function speakLine(text, rate, pitch) {
     var utter = new SpeechSynthesisUtterance(text);
     var voice = getOwnerVoice();
     if (voice) utter.voice = voice;
-    utter.rate = rate || 1.0;
-    utter.pitch = (typeof ownerGender !== 'undefined' && ownerGender === 'female') ? (pitch || 1.0) * 1.15 : (pitch || 1.0);
+    if (typeof ownerGender !== 'undefined' && ownerGender === 'female') {
+      // Female voice: higher pitch + slightly faster rate for a distinctly different sound
+      utter.rate = (rate || 1.0) * 1.15;
+      utter.pitch = (pitch || 1.0) * 1.5;
+    } else {
+      // Male voice - DO NOT CHANGE THIS
+      utter.rate = rate || 1.0;
+      utter.pitch = pitch || 1.0;
+    }
     utter.volume = 1.0;
     speechSynthesis.speak(utter);
   } catch(e) {}

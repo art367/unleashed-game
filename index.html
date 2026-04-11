@@ -81,10 +81,12 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 <div class="go-title">CAUGHT!</div>
 <div class="go-subtitle" id="goSubtitle">Back on the lead...</div>
 <div class="stats-grid">
-<div class="stat-item"><span id="goScore">0</span>Score</div>
+<div class="stat-item"><span id="goScore" style="color:#FF6B6B">0</span>🐕 Dog Score</div>
+<div class="stat-item"><span id="goOwnerScore" style="color:#4A90D9">0</span>👤 Owner Score</div>
 <div class="stat-item"><span id="goDistance">0m</span>Distance</div>
 <div class="stat-item"><span id="goChaos">0</span>Chaos</div>
 <div class="stat-item"><span id="goAnimals">0</span>Animals</div>
+<div class="stat-item"><span id="goWinner" style="font-size:1rem">-</span>Winner</div>
 </div>
 <div class="chaos-rating" id="chaosRating">Good Boy 😇</div>
 <div class="high-score-note" id="highScoreNote" style="display:none">🏆 NEW HIGH SCORE!</div>
@@ -92,7 +94,8 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 </div>
 <div id="hud">
 <div class="hud-left">
-<div class="hud-score" id="hudScore">0</div>
+<div class="hud-score" id="hudScore" style="color:#FF6B6B">🐕 0</div>
+<div class="hud-score" id="hudOwnerScore" style="color:#4A90D9;font-size:clamp(0.8rem,2.2vw,1rem)">👤 0</div>
 <div class="hud-distance" id="hudDistance">0m</div>
 </div>
 <div class="hud-right">
@@ -177,6 +180,11 @@ let grassStripes = [], trees = [], scenery = [];
 
 // Game metrics
 let score, distance, chaosPoints, animalsCaught, combo, comboTimer;
+let ownerScore;
+let poos = []; // dropped poos on the ground
+let pooTimer = 0; // countdown to next poo
+let dogPooing = false; // is dog currently squatting?
+let pooSquatTimer = 0; // how long the squat lasts
 let panicLevel, gameSpeed, spawnTimer, difficultyTimer;
 let shakeX, shakeY, shakeDuration;
 let dashCooldown, dashActive, dashTimer;
@@ -227,17 +235,17 @@ let musicInterval = null;
 let musicBeat = 0;
 let musicBPM = 140;
 
-// Musical scales - pentatonic for happy vibes, minor for chaos
-const HAPPY_SCALE = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25]; // C major pentatonic (+octave)
-const CHAOS_SCALE = [261.63, 293.66, 311.13, 349.23, 392.00, 415.30, 466.16, 523.25]; // C minor
+// Soft racing scales - dreamy/chill vibe that builds gently
+const CHILL_SCALE = [220.00, 246.94, 277.18, 329.63, 369.99, 440.00, 493.88, 554.37]; // A major smooth
+const TENSE_SCALE = [220.00, 246.94, 261.63, 329.63, 349.23, 440.00, 493.88, 523.25]; // A mix (slightly tense)
 
-// Bass patterns - simple root notes
-const BASS_PATTERN_CALM = [0, -1, 0, 2, 0, -1, 3, 2];
-const BASS_PATTERN_CHAOS = [0, 0, 3, 3, 5, 5, 3, 0];
+// Smooth bass - gentle pulse
+const BASS_CHILL = [0, 0, 4, 4, 2, 2, 5, 4];
+const BASS_TENSE = [0, 0, 3, 3, 5, 5, 2, 0];
 
-// Melody rhythm patterns (1 = play, 0 = rest)
-const MELODY_RHYTHM_CALM = [1,0,1,0, 1,0,0,1, 1,0,1,0, 0,1,0,1];
-const MELODY_RHYTHM_CHAOS = [1,1,1,0, 1,1,0,1, 1,0,1,1, 1,1,1,1];
+// Sparse melody - lots of breathing room
+const MELODY_CHILL = [1,0,0,0, 1,0,0,1, 0,0,1,0, 0,1,0,0];
+const MELODY_TENSE = [1,0,1,0, 1,0,0,1, 1,0,1,0, 0,1,0,1];
 
 function playMusicNote(freq, dur, type, vol, delay) {
   if (!audioCtx) return;
@@ -264,70 +272,80 @@ function musicTick() {
   const panic = panicLevel || 0;
   const intensity = clamp(panic / 100, 0, 1);
 
-  // BPM increases with panic
-  musicBPM = 130 + intensity * 60;
+  // BPM: gentle cruise that only slightly picks up
+  musicBPM = 95 + intensity * 30;
   const beatDur = 60 / musicBPM;
 
-  const scale = intensity > 0.5 ? CHAOS_SCALE : HAPPY_SCALE;
-  const bassPattern = intensity > 0.5 ? BASS_PATTERN_CHAOS : BASS_PATTERN_CALM;
-  const melodyRhythm = intensity > 0.5 ? MELODY_RHYTHM_CHAOS : MELODY_RHYTHM_CALM;
+  const scale = intensity > 0.55 ? TENSE_SCALE : CHILL_SCALE;
+  const bassPattern = intensity > 0.55 ? BASS_TENSE : BASS_CHILL;
+  const melodyRhythm = intensity > 0.55 ? MELODY_TENSE : MELODY_CHILL;
 
   const beatInBar = musicBeat % 16;
   const barBeat = musicBeat % 8;
 
-  // ---- BASS (always playing, foundation) ----
-  if (beatInBar % 2 === 0) {
+  // ---- WARM PAD (constant gentle hum, like wind through the park) ----
+  if (beatInBar === 0) {
+    const padNote = scale[0] / 2;
+    playMusicNote(padNote, beatDur * 15, 'sine', 0.025 + intensity * 0.01, 0);
+    // Add a fifth for warmth
+    playMusicNote(padNote * 1.5, beatDur * 15, 'sine', 0.015 + intensity * 0.008, 0);
+  }
+
+  // ---- SOFT BASS (smooth, rounded) ----
+  if (beatInBar % 4 === 0) {
     const bassIdx = bassPattern[barBeat % bassPattern.length];
-    const bassNote = scale[clamp(bassIdx, 0, scale.length - 1)] / 2; // one octave down
-    const bassVol = 0.08 + intensity * 0.05;
-    playMusicNote(bassNote, beatDur * 1.8, 'triangle', bassVol, 0);
+    const bassNote = scale[clamp(bassIdx, 0, scale.length - 1)] / 2;
+    const bassVol = 0.05 + intensity * 0.025;
+    playMusicNote(bassNote, beatDur * 3, 'sine', bassVol, 0);
   }
 
-  // ---- KICK DRUM (on beats 0, 4, 8, 12 - four on the floor as it gets hectic) ----
-  if (intensity > 0.3) {
-    if (beatInBar % 4 === 0) {
-      playMusicNote(55, 0.12, 'sine', 0.12 + intensity * 0.06, 0);
-    }
-    // Hi-hat on every beat at high intensity
-    if (intensity > 0.5 && beatInBar % 2 === 0) {
-      playMusicNote(800 + Math.random() * 400, 0.03, 'square', 0.03, 0);
-    }
+  // ---- SOFT KICK (gentle pulse, like a heartbeat) ----
+  if (beatInBar % 8 === 0) {
+    playMusicNote(50, 0.15, 'sine', 0.06 + intensity * 0.03, 0);
+  }
+  // Extra kick at higher intensity
+  if (intensity > 0.4 && beatInBar % 4 === 0) {
+    playMusicNote(50, 0.1, 'sine', 0.04 + intensity * 0.02, 0);
   }
 
-  // ---- MELODY (bouncy tune) ----
+  // ---- SHAKER (soft hi-hat, like leaves rustling) ----
+  if (beatInBar % 2 === 0) {
+    const shakerVol = 0.012 + intensity * 0.012;
+    playMusicNote(6000 + Math.random() * 2000, 0.02, 'sine', shakerVol, 0);
+  }
+
+  // ---- MELODY (sparse, dreamy, sine wave) ----
   if (melodyRhythm[beatInBar % melodyRhythm.length]) {
-    // Pick notes that tend to go up then down for a bouncy feel
-    const melodyPos = (musicBeat * 3 + Math.floor(Math.sin(musicBeat * 0.7) * 3)) % scale.length;
+    const melodyPos = Math.floor((Math.sin(musicBeat * 0.4) * 0.5 + 0.5) * (scale.length - 1));
     const melodyNote = scale[melodyPos];
-    const melVol = 0.04 + intensity * 0.03;
-    playMusicNote(melodyNote, beatDur * 0.6, 'square', melVol, 0);
+    const melVol = 0.03 + intensity * 0.015;
+    // Use sine for soft, warm tone
+    playMusicNote(melodyNote, beatDur * 1.5, 'sine', melVol, 0);
 
-    // Harmony note (a third above) at higher intensity
-    if (intensity > 0.4) {
-      const harmIdx = (melodyPos + 2) % scale.length;
-      playMusicNote(scale[harmIdx], beatDur * 0.5, 'sine', melVol * 0.6, 0);
+    // Gentle octave shimmer at higher panic
+    if (intensity > 0.35) {
+      playMusicNote(melodyNote * 2, beatDur * 0.8, 'sine', melVol * 0.3, beatDur * 0.2);
     }
   }
 
-  // ---- ARPEGGIO (adds energy at medium+ panic) ----
-  if (intensity > 0.25 && beatInBar % 2 === 1) {
-    const arpIdx = (musicBeat * 2) % scale.length;
-    const arpNote = scale[arpIdx] * 2; // high octave
-    playMusicNote(arpNote, beatDur * 0.3, 'sine', 0.025 + intensity * 0.015, 0);
+  // ---- GENTLE ARPEGGIO (twinkling, like sunlight on water) ----
+  if (intensity > 0.2 && beatInBar % 3 === 1) {
+    const arpIdx = (musicBeat * 3) % scale.length;
+    const arpNote = scale[arpIdx] * 2;
+    playMusicNote(arpNote, beatDur * 0.5, 'sine', 0.015 + intensity * 0.01, 0);
   }
 
-  // ---- STINGER on snare beats (2 and 6 of each bar) ----
-  if (intensity > 0.15 && (barBeat === 2 || barBeat === 6)) {
-    // Snare-like noise burst
-    playMusicNote(200 + Math.random() * 100, 0.06, 'sawtooth', 0.04 + intensity * 0.03, 0);
+  // ---- TENSION STRINGS (only at high panic - adds urgency without harshness) ----
+  if (intensity > 0.6 && beatInBar % 4 === 2) {
+    const tensionNote = scale[5];
+    playMusicNote(tensionNote, beatDur * 1.5, 'triangle', 0.02 + (intensity - 0.6) * 0.03, 0);
   }
 
   musicBeat++;
 
-  // Schedule next beat
   if (musicPlaying) {
     clearTimeout(musicInterval);
-    musicInterval = setTimeout(musicTick, (beatDur * 1000) / 2); // 8th notes
+    musicInterval = setTimeout(musicTick, (beatDur * 1000) / 2);
   }
 }
 
@@ -357,6 +375,20 @@ function stopMusic() {
   musicInterval = null;
 }
 
+
+function sfx_poo() {
+  // Comedic squelch
+  playTone(80, 0.25, 'sine', 0.15, 30);
+  setTimeout(() => playTone(60, 0.15, 'sine', 0.1, -20), 200);
+  setTimeout(() => playTone(100, 0.08, 'triangle', 0.08, 0), 350);
+}
+
+function sfx_bagPickup() {
+  // Rustling bag sound
+  playTone(400, 0.05, 'sawtooth', 0.08, 200);
+  setTimeout(() => playTone(500, 0.04, 'sawtooth', 0.06, -100), 60);
+  setTimeout(() => playTone(350, 0.06, 'sawtooth', 0.07, 100), 120);
+}
 
 function sfx_splash() {
   playTone(150, 0.2, 'sine', 0.3, -80);
@@ -1299,6 +1331,11 @@ function initGame() {
   distance = 0;
   chaosPoints = 0;
   animalsCaught = 0;
+  ownerScore = 0;
+  poos = [];
+  pooTimer = rand(12, 20);
+  dogPooing = false;
+  pooSquatTimer = 0;
   combo = 0;
   comboTimer = 0;
   panicLevel = 0;
@@ -1445,6 +1482,9 @@ function update(dt) {
 
   // Score ticks with distance
   score += effectiveSpeed * 0.5;
+  // Owner gets points for persistence + when stress is low
+  ownerScore += effectiveSpeed * 0.15;
+  if (panicLevel < 30) ownerScore += dt * 3; // bonus when calm
 
   // Panting/running ambient sounds
   if (Math.random() < dt * 0.3) {
@@ -1685,27 +1725,39 @@ function update(dt) {
         addShake(6, 0.25);
         
         if (ob.type === 'jogger' || ob.type === 'cyclist') {
-          // Owner thinks the human might catch the dog! Relief!
-          panicLevel = clamp(panicLevel - 25, 0, 100);
-          owner.baseOffset = Math.min(H * 0.6, owner.baseOffset + 40); // Owner slows down with hope
-          spawnParticles(dog.x, dog.y - camera.y, '#6BCB77', 8, 3, 0.5);
+          // Human tries to help! Owner stress drops significantly
+          panicLevel = clamp(panicLevel - 30, 0, 100);
+          owner.baseOffset = Math.min(H * 0.6, owner.baseOffset + 50); // Owner relaxes, slows right down
+          spawnParticles(dog.x, dog.y - camera.y, '#6BCB77', 10, 3, 0.6);
           spawnFloatText(dog.x, dog.y - camera.y - 20, 'GRAB HIM!', '#6BCB77');
           
-          // But dog dodges and escapes! Panic spikes back after a moment
+          // Owner gets points for the assist attempt!
+          ownerScore += 50;
+          spawnFloatText(ob.x, dog.y - camera.y - 40, '👤+50', '#4A90D9');
+          
+          // But... dog dodges and escapes! Panic comes back
           const escapePanic = panicLevel;
           setTimeout(() => {
             if (state === 'playing') {
-              panicLevel = clamp(escapePanic + 20, 0, 100);
+              panicLevel = clamp(escapePanic + 15, 0, 100);
               lastVoiceTime = 0;
               shoutName();
               spawnFloatText(dog.x, dog.y - camera.y - 30, 'HE DODGED!', '#FF6B6B');
               showCombo('🐕💨 ESCAPED!');
               sfx_boost();
+              score += 30; // Dog gets points for the escape!
+              spawnFloatText(dog.x, dog.y - camera.y - 50, '🐕+30', '#FF6B6B');
             }
           }, 800);
           
-          // Show owner relief then despair
-          ownerSpeechBubble.text = 'GRAB HIM! PLEASE!';
+          // Show owner relief bubble
+          const helpShouts = [
+            'GRAB HIM! PLEASE!',
+            'YES! SOMEONE HELP!',
+            'THANK GOD! GRAB ' + dogName + '!',
+            'STOP THAT DOG PLEASE!'
+          ];
+          ownerSpeechBubble.text = helpShouts[Math.floor(Math.random() * helpShouts.length)];
           ownerSpeechBubble.timer = 1.5;
           ownerSpeechBubble.maxTimer = 1.5;
         } else {
@@ -1851,8 +1903,102 @@ function update(dt) {
     gameOver();
   }
 
+  // ==================== DOG POO MECHANIC ====================
+  pooTimer -= dt;
+  
+  if (pooTimer <= 0 && !dogPooing) {
+    // Dog needs to poo! Starts squatting
+    dogPooing = true;
+    pooSquatTimer = 1.8; // squat for 1.8 seconds
+    showCombo('💩 OH NO...');
+    sfx_bark();
+    
+    // Owner sees it coming
+    ownerSpeechBubble.text = 'OH NO ' + dogName + '... NOT HERE!!';
+    ownerSpeechBubble.timer = 2.0;
+    ownerSpeechBubble.maxTimer = 2.0;
+    if (typeof speechSynthesis !== 'undefined') {
+      try {
+        const utter = new SpeechSynthesisUtterance('Oh no ' + dogName + '! Not here! Not now!');
+        const voices = speechSynthesis.getVoices();
+        const bv = voices.find(v => v.lang.includes('en-GB')) || voices.find(v => v.lang.includes('en'));
+        if (bv) utter.voice = bv;
+        utter.rate = 1.1; utter.pitch = 1.3; utter.volume = 1.0;
+        speechSynthesis.cancel();
+        speechSynthesis.speak(utter);
+        lastVoiceTime = Date.now();
+      } catch(e) {}
+    }
+  }
+  
+  if (dogPooing) {
+    pooSquatTimer -= dt;
+    // Dog slows way down while pooing
+    gameSpeed = Math.max(0.5, gameSpeed * 0.92);
+    
+    if (pooSquatTimer <= 0) {
+      // Poo dropped!
+      dogPooing = false;
+      pooTimer = rand(15, 28); // next poo in 15-28 seconds
+      sfx_poo();
+      
+      poos.push({
+        x: dog.x, y: dog.y,
+        worldY: dog.y,
+        pickedUp: false,
+        age: 0
+      });
+      
+      spawnParticles(dog.x, dog.y - camera.y, '#8B6914', 6, 2, 0.4);
+      spawnFloatText(dog.x, dog.y - camera.y, '💩', '#8B6914');
+      score += 20; // Dog gets points for the audacity
+      spawnFloatText(dog.x, dog.y - camera.y - 20, '🐕+20', '#FF6B6B');
+      panicLevel = clamp(panicLevel + 10, 0, 100);
+      
+      ownerSpeechBubble.text = 'OH FOR GODS SAKE ' + dogName + '!!';
+      ownerSpeechBubble.timer = 2.0;
+      ownerSpeechBubble.maxTimer = 2.0;
+    }
+  }
+  
+  // Check if owner reaches a poo and picks it up (bag it!)
+  for (let p of poos) {
+    if (p.pickedUp) continue;
+    p.age += dt;
+    const ownerDist = Math.hypot((owner.x || W/2) - p.x, owner.y - p.worldY);
+    if (ownerDist < 50) {
+      p.pickedUp = true;
+      sfx_bagPickup();
+      
+      // Owner gets BIG points for picking up the poo - levels things out!
+      const pooBonus = 80 + Math.floor(p.age * 5); // more points the older it is
+      ownerScore += pooBonus;
+      // Reduce dog score slightly
+      score = Math.max(0, score - 30);
+      
+      spawnParticles(p.x, p.worldY - camera.y, '#4A90D9', 8, 3, 0.5);
+      spawnFloatText(p.x, p.worldY - camera.y, '🛍️ BAGGED!', '#4A90D9');
+      spawnFloatText(p.x, p.worldY - camera.y - 22, '👤+' + pooBonus, '#4A90D9');
+      spawnFloatText(p.x, p.worldY - camera.y - 44, '🐕-30', '#FF6B6B');
+      
+      panicLevel = clamp(panicLevel - 15, 0, 100); // Owner calms down after being responsible
+      
+      const bagLines = [
+        'At least I have a bag...',
+        'Good owners pick up!',
+        'This is SO embarrassing ' + dogName,
+        'I am SO sorry everyone!'
+      ];
+      ownerSpeechBubble.text = bagLines[Math.floor(Math.random() * bagLines.length)];
+      ownerSpeechBubble.timer = 2.0;
+      ownerSpeechBubble.maxTimer = 2.0;
+    }
+  }
+  poos = poos.filter(p => !p.pickedUp && p.worldY > camera.y - H);
+
   // Update HUD
-  document.getElementById('hudScore').textContent = Math.floor(score);
+  document.getElementById('hudScore').textContent = '🐕 ' + Math.floor(score);
+  document.getElementById('hudOwnerScore').textContent = '👤 ' + Math.floor(ownerScore);
   document.getElementById('hudDistance').textContent = Math.floor(distance) + 'm';
   const bar = document.getElementById('panicBar');
   bar.style.width = panicLevel + '%';
@@ -1921,8 +2067,55 @@ function render() {
     }
   }
 
-  // Dog (player)
-  drawDog(dog.x, dog.y - camY, dog.breed, dog.runPhase, dashActive);
+  // Draw poos on the ground
+  for (let p of poos) {
+    if (p.pickedUp) continue;
+    const psy = p.worldY - camY;
+    if (psy < -30 || psy > H + 30) continue;
+    // Poo pile
+    ctx.fillStyle = '#6B4423';
+    ctx.beginPath();
+    ctx.ellipse(p.x, psy + 2, 7, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#8B5A2B';
+    ctx.beginPath();
+    ctx.ellipse(p.x - 1, psy, 5, 3.5, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#7B4F2E';
+    ctx.beginPath();
+    ctx.ellipse(p.x + 1, psy - 2, 3.5, 2.5, -0.2, 0, Math.PI*2);
+    ctx.fill();
+    // Stink lines
+    ctx.strokeStyle = 'rgba(139,105,20,0.4)';
+    ctx.lineWidth = 1;
+    const st = Date.now() / 400;
+    for (let sl = 0; sl < 3; sl++) {
+      const sx = p.x - 4 + sl * 4;
+      const wv = Math.sin(st + sl * 2) * 3;
+      ctx.beginPath();
+      ctx.moveTo(sx, psy - 5);
+      ctx.quadraticCurveTo(sx + wv, psy - 12, sx - wv, psy - 18);
+      ctx.stroke();
+    }
+  }
+
+  // Dog (player) - squat animation if pooing
+  if (dogPooing) {
+    // Squatting dog - draw lower & wider
+    ctx.save();
+    ctx.translate(dog.x, dog.y - camY + 6);
+    ctx.scale(1.1, 0.7); // squished down
+    ctx.translate(-dog.x, -(dog.y - camY + 6));
+    drawDog(dog.x, dog.y - camY + 6, dog.breed, dog.runPhase * 0.1, false);
+    ctx.restore();
+    // Strain face indicator
+    ctx.fillStyle = '#FF6B6B';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('😣', dog.x, dog.y - camY - 25);
+  } else {
+    drawDog(dog.x, dog.y - camY, dog.breed, dog.runPhase, dashActive);
+  }
 
   // Owner
   const ownerSY = owner.y - camY;
@@ -2065,6 +2258,10 @@ function gameOver() {
   }
 
   document.getElementById('goScore').textContent = finalScore;
+  document.getElementById('goOwnerScore').textContent = Math.floor(ownerScore);
+  const dogWon = finalScore > ownerScore;
+  document.getElementById('goWinner').textContent = dogWon ? '🐕 DOG WINS!' : '👤 OWNER WINS!';
+  document.getElementById('goWinner').style.color = dogWon ? '#FF6B6B' : '#4A90D9';
   document.getElementById('goDistance').textContent = Math.floor(distance) + 'm';
   document.getElementById('goChaos').textContent = Math.floor(chaosPoints);
   document.getElementById('goAnimals').textContent = animalsCaught;

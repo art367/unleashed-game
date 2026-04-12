@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🔊 Voice Options Demo - UNLEASHED!</title>
+<style>
+body{background:#1a1a2e;color:#fff;font-family:system-ui;display:flex;flex-direction:column;align-items:center;min-height:100vh;margin:0;padding:20px}
+h1{font-size:1.8rem;margin-bottom:4px}
+h2{font-size:1.2rem;color:rgba(255,255,255,0.7);margin:24px 0 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:8px;width:100%;max-width:550px}
+.sub{color:rgba(255,255,255,0.5);margin-bottom:20px;text-align:center;font-size:0.9rem}
+.btn{background:rgba(255,107,107,0.15);border:2px solid rgba(255,107,107,0.3);color:#fff;padding:12px 20px;border-radius:14px;font-size:0.95rem;cursor:pointer;margin:5px;transition:all 0.2s;min-width:300px;text-align:left;display:block}
+.btn:hover{background:rgba(255,107,107,0.3);transform:scale(1.02)}
+.btn:active{transform:scale(0.97)}
+.male{border-color:rgba(74,144,217,0.4);background:rgba(74,144,217,0.1)}
+.male:hover{background:rgba(74,144,217,0.25)}
+.female{border-color:rgba(232,160,191,0.4);background:rgba(232,160,191,0.1)}
+.female:hover{background:rgba(232,160,191,0.25)}
+.green{border-color:rgba(107,203,119,0.4);background:rgba(107,203,119,0.1)}
+.green:hover{background:rgba(107,203,119,0.25)}
+.gold{border-color:rgba(255,217,61,0.4);background:rgba(255,217,61,0.1)}
+.gold:hover{background:rgba(255,217,61,0.25)}
+.purple{border-color:rgba(178,102,255,0.4);background:rgba(178,102,255,0.1)}
+.purple:hover{background:rgba(178,102,255,0.25)}
+.section{margin:8px 0;text-align:center;width:100%;max-width:550px}
+.label{color:rgba(255,255,255,0.35);font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
+.note{background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;margin:20px 0;max-width:550px;font-size:0.85rem;line-height:1.6;color:rgba(255,255,255,0.7)}
+.note b{color:#FFD93D}
+.verdict{background:rgba(107,203,119,0.1);border:2px solid rgba(107,203,119,0.3);border-radius:12px;padding:16px;margin:20px 0;max-width:550px;font-size:0.9rem;line-height:1.7}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:0.7rem;margin-left:6px;vertical-align:middle}
+</style>
+</head><body>
+<h1>🔊 UNLEASHED! Voice Options</h1>
+<div class="sub">Tap each button to hear it. Compare and pick your favourite!</div>
+
+<!-- ==================== OPTION A: DIFFERENT BLEEP STYLES ==================== -->
+<h2>🔴 OPTION A: Bleep Styles</h2>
+<div class="section">
+<div class="label">A1 — Classic TV Censor (1kHz sine)</div>
+<button class="btn male" onclick="playBleep('Oh for BLEEP sake FENTON!','male',1.1,1.0,'classic')">👨 "Oh for *BLEEP* sake FENTON!"</button>
+<button class="btn female" onclick="playBleep('Oh for BLEEP sake FENTON!','female',1.05,1.5,'classic')">👩 "Oh for *BLEEP* sake FENTON!"</button>
+</div>
+
+<div class="section">
+<div class="label">A2 — Cartoon Horn (lower, funnier)</div>
+<button class="btn male" onclick="playBleep('FENTON you BLEEP ing BLEEP! LEAVE THE DUCKS!','male',1.1,1.0,'horn')">👨 "FENTON you *HONK*ing *HONK*! LEAVE THE DUCKS!"</button>
+<button class="btn female" onclick="playBleep('FENTON you BLEEP ing BLEEP! LEAVE THE DUCKS!','female',1.05,1.5,'horn')">👩 "FENTON you *HONK*ing *HONK*! LEAVE THE DUCKS!"</button>
+</div>
+
+<div class="section">
+<div class="label">A3 — Duck Quack Censor (silly!)</div>
+<button class="btn male" onclick="playBleep('Oh BLEEP oh BLEEP! NOT THE DEER!','male',1.1,1.0,'quack')">👨 "Oh *QUACK* oh *QUACK*! NOT THE DEER!"</button>
+<button class="btn female" onclick="playBleep('Oh BLEEP oh BLEEP! NOT THE DEER!','female',1.05,1.5,'quack')">👩 "Oh *QUACK* oh *QUACK*! NOT THE DEER!"</button>
+</div>
+
+<div class="section">
+<div class="label">A4 — Dog Bark Censor (on-brand! 🐕)</div>
+<button class="btn male" onclick="playBleep('I am so BLEEP ing sorry everyone!','male',0.95,1.0,'bark')">👨 "I am so *WOOF*ing sorry everyone!"</button>
+<button class="btn female" onclick="playBleep('I am so BLEEP ing sorry everyone!','female',1.0,1.5,'bark')">👩 "I am so *WOOF*ing sorry everyone!"</button>
+</div>
+
+<div class="section">
+<div class="label">A5 — Squeaky Toy Censor (the teddy! 🧸)</div>
+<button class="btn male" onclick="playBleep('FENTON you BLEEP ing BLEEP!','male',1.2,1.0,'squeak')">👨 "FENTON you *SQUEAK*ing *SQUEAK*!"</button>
+<button class="btn female" onclick="playBleep('FENTON you BLEEP ing BLEEP!','female',1.1,1.5,'squeak')">👩 "FENTON you *SQUEAK*ing *SQUEAK*!"</button>
+</div>
+
+<!-- ==================== OPTION B: FUNNY REPLACEMENT WORDS ==================== -->
+<h2>🟢 OPTION B: Funny Word Replacements</h2>
+<div class="section">
+<div class="label">B1 — "Fudge" / "Flipping heck"</div>
+<button class="btn green" onclick="speakDirect('Oh for FUDGE sake FENTON!','male',1.1,1.0)">👨 "Oh for FUDGE sake FENTON!"</button>
+<button class="btn green" onclick="speakDirect('FLIPPING HECK FENTON! LEAVE THE DUCKS!','female',1.05,1.5)">👩 "FLIPPING HECK FENTON! LEAVE THE DUCKS!"</button>
+<button class="btn green" onclick="speakDirect('Oh FUDGING hell FENTON! Not the deer!','male',1.15,1.0)">👨 "Oh FUDGING hell FENTON! Not the deer!"</button>
+</div>
+
+<div class="section">
+<div class="label">B2 — "Blooming" / "Blimey" / "Crikey"</div>
+<button class="btn green" onclick="speakDirect('BLOOMING HECK FENTON! Get back here you blooming nightmare!','male',1.1,1.0)">👨 "BLOOMING HECK! Get back here you blooming nightmare!"</button>
+<button class="btn green" onclick="speakDirect('Oh CRIKEY FENTON! BLIMEY! NOT THE DUCKS!','female',1.05,1.5)">👩 "Oh CRIKEY! BLIMEY! NOT THE DUCKS!"</button>
+<button class="btn green" onclick="speakDirect('BLIMEY O RILEY FENTON! What have you done!','male',1.1,1.0)">👨 "BLIMEY O'RILEY FENTON! What have you done!"</button>
+</div>
+
+<div class="section">
+<div class="label">B3 — "Sugar" / "Bloomin' Nora" / "Good grief"</div>
+<button class="btn green" onclick="speakDirect('Oh SUGAR! SUGAR SUGAR SUGAR! FENTON NOT THE POND!','female',1.1,1.5)">👩 "Oh SUGAR! SUGAR SUGAR! NOT THE POND!"</button>
+<button class="btn green" onclick="speakDirect('BLOOMIN NORA FENTON! I am NEVER taking you out again!','male',1.0,1.0)">👨 "BLOOMIN' NORA! I am NEVER taking you out again!"</button>
+<button class="btn green" onclick="speakDirect('Good GRIEF FENTON! GOOD GRIEF! What is WRONG with you!','female',1.05,1.5)">👩 "Good GRIEF! GOOD GRIEF! What is WRONG with you!"</button>
+</div>
+
+<div class="section">
+<div class="label">B4 — Full Panic Escalation (Family Mode)</div>
+<button class="btn gold" onclick="speakDirect('FENTON! Oh for fudge sake! FLIPPING HECK! Somebody grab that blooming dog! Oh CRIKEY not the deer! BLOOMIN NORA! I am NEVER bringing you to this park again!','male',1.05,1.0)">👨 Full panic: "Oh fudge... FLIPPING HECK... BLOOMIN' NORA!"</button>
+<button class="btn gold" onclick="speakDirect('FENTON! Oh sugar! Oh FLIPPING heck! FENTON! GOOD GRIEF FENTON! You BLOOMING nightmare! CRIKEY! I am NEVER EVER bringing you here again!','female',1.0,1.5)">👩 Full panic: "Oh sugar... GOOD GRIEF... CRIKEY!"</button>
+</div>
+
+<!-- ==================== OPTION C: HYBRID - Words + Bleeps ==================== -->
+<h2>🟣 OPTION C: Hybrid (Words + Bleeps)</h2>
+<div class="section">
+<div class="label">C1 — Mostly clean with occasional bleeps for emphasis</div>
+<button class="btn purple" onclick="playBleep('Oh FUDGING BLEEP FENTON! You BLOOMING nightmare!','male',1.1,1.0,'squeak')">👨 "Oh fudging *SQUEAK* FENTON! You blooming nightmare!"</button>
+<button class="btn purple" onclick="playBleep('FLIPPING BLEEP FENTON! GOOD GRIEF! Oh BLEEP!','female',1.05,1.5,'horn')">👩 "Flipping *HONK*! GOOD GRIEF! Oh *HONK*!"</button>
+</div>
+
+<!-- ==================== MY VERDICT ==================== -->
+<div class="verdict">
+<div style="font-size:1.1rem;font-weight:bold;margin-bottom:8px">🏆 My Recommendation</div>
+<p><b>For maximum funny:</b> Go with <b>Option B</b> (funny words) as the default, with an optional <b>"Uncensored Mode"</b> toggle for adults. Here's why:</p>
+<p>• The electronic voice saying "BLOOMIN' NORA!" or "Oh FUDGE sake!" is <b>arguably funnier</b> than actual swearing because the voice takes it SO seriously</p>
+<p>• It opens up the <b>12+ market</b> which is 3-4x bigger</p>
+<p>• Parents will let their kids play it → <b>more shares, more viral</b></p>
+<p>• You can still have an <b>"18+ Mode"</b> as a toggle in settings for the adults who want it</p>
+<p>• The <b>squeaky toy bleep (A5)</b> is brilliant as an Easter egg — dog censors the owner! 🧸</p>
+</div>
+
+<div class="note">
+💡 <b>Business tip:</b> Games with family-friendly defaults but optional adult modes get <b>featured more often</b> on app stores. Apple and Google both favour 12+ rated games in their recommendations. The swearing version becomes a "secret unlock" that people share on TikTok — <b>"Turn on uncensored mode in UNLEASHED and listen to this!"</b> — which is free marketing.
+</div>
+
+<div style="margin:20px 0;text-align:center">
+<a href="index.html" style="color:#FFD93D;font-size:1.1rem">← Back to UNLEASHED!</a>
+</div>
+
+<script>
+var audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playBleepTone(startTime, duration, type) {
+  if (!audioCtx) return;
+  var o = audioCtx.createOscillator();
+  var g = audioCtx.createGain();
+  
+  switch(type) {
+    case 'classic':
+      o.type = 'sine'; o.frequency.value = 1000;
+      g.gain.setValueAtTime(0.3, startTime);
+      break;
+    case 'horn':
+      o.type = 'sawtooth'; o.frequency.value = 220;
+      o.frequency.linearRampToValueAtTime(180, startTime + duration);
+      g.gain.setValueAtTime(0.25, startTime);
+      break;
+    case 'quack':
+      o.type = 'square'; o.frequency.setValueAtTime(600, startTime);
+      o.frequency.linearRampToValueAtTime(300, startTime + 0.05);
+      o.frequency.linearRampToValueAtTime(500, startTime + 0.1);
+      o.frequency.linearRampToValueAtTime(250, startTime + duration);
+      g.gain.setValueAtTime(0.2, startTime);
+      break;
+    case 'bark':
+      o.type = 'square'; o.frequency.setValueAtTime(350, startTime);
+      o.frequency.linearRampToValueAtTime(200, startTime + 0.08);
+      o.frequency.setValueAtTime(400, startTime + 0.1);
+      o.frequency.linearRampToValueAtTime(180, startTime + duration);
+      g.gain.setValueAtTime(0.3, startTime);
+      break;
+    case 'squeak':
+      o.type = 'sine'; o.frequency.setValueAtTime(800, startTime);
+      o.frequency.linearRampToValueAtTime(1600, startTime + 0.06);
+      o.frequency.linearRampToValueAtTime(900, startTime + duration);
+      g.gain.setValueAtTime(0.35, startTime);
+      break;
+  }
+  
+  g.gain.linearRampToValueAtTime(0, startTime + duration - 0.02);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(startTime); o.stop(startTime + duration);
+}
+
+function getVoice(gender) {
+  var voices = speechSynthesis.getVoices();
+  if (gender === 'female') {
+    return voices.find(function(v) { return v.lang.includes('en') && v.name.toLowerCase().includes('female'); })
+      || voices.find(function(v) { return v.lang.includes('en-GB'); });
+  }
+  return voices.find(function(v) { return v.lang.includes('en-GB') && v.name.toLowerCase().includes('male'); })
+    || voices.find(function(v) { return v.lang.includes('en-GB'); })
+    || voices.find(function(v) { return v.lang.includes('en'); });
+}
+
+function speakDirect(text, gender, rate, pitch) {
+  ensureAudio();
+  if (typeof speechSynthesis === 'undefined') return;
+  speechSynthesis.cancel();
+  var utter = new SpeechSynthesisUtterance(text);
+  var voice = getVoice(gender);
+  if (voice) utter.voice = voice;
+  utter.rate = rate || 1.0;
+  utter.pitch = pitch || 1.0;
+  utter.volume = 1.0;
+  speechSynthesis.speak(utter);
+}
+
+function playBleep(text, gender, rate, pitch, bleepType) {
+  ensureAudio();
+  if (typeof speechSynthesis === 'undefined') return;
+  speechSynthesis.cancel();
+  
+  var parts = text.split('BLEEP');
+  var delay = 0;
+  
+  for (var i = 0; i < parts.length; i++) {
+    (function(part, idx, currentDelay) {
+      setTimeout(function() {
+        if (part.trim()) {
+          var utter = new SpeechSynthesisUtterance(part.trim());
+          var voice = getVoice(gender);
+          if (voice) utter.voice = voice;
+          utter.rate = rate || 1.0;
+          utter.pitch = pitch || 1.0;
+          utter.volume = 1.0;
+          speechSynthesis.speak(utter);
+        }
+        
+        if (idx < parts.length - 1) {
+          var bleepDelay = Math.max(part.trim().length * (45 / (rate || 1.0)), 200);
+          setTimeout(function() {
+            ensureAudio();
+            var bleepDuration = bleepType === 'quack' || bleepType === 'bark' ? 0.2 : 0.3;
+            playBleepTone(audioCtx.currentTime, bleepDuration, bleepType);
+          }, bleepDelay);
+        }
+      }, currentDelay);
+    })(parts[i], i, delay);
+    
+    delay += Math.max(parts[i].trim().length * (50 / (rate || 1.0)), 250) + 320;
+  }
+}
+
+if (typeof speechSynthesis !== 'undefined') {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = function() { speechSynthesis.getVoices(); };
+}
+</script>
+</body></html>

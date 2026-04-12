@@ -171,14 +171,13 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 <div>🧺 Raid a picnic: <b>+100</b> (someone left sandwiches unattended)</div>
 <div>💦 Splash in ponds: <b>+30</b> (bonus wet dog smell)</div>
 <div>🌳 Wee on trees: Priceless (marking territory is an art form)</div>
-<div>🍗 Eat a drumstick: <b>+70</b> (naughty! leave it! 💩 incoming...)</div>
 </div>
 
 <div style="background:rgba(74,144,217,0.12);border-radius:12px;padding:14px;margin-bottom:12px">
 <div style="font-size:1.1rem;font-weight:bold;margin-bottom:6px">👤 Owner Points (be responsible)</div>
-<div>🦴 Dog fetches bone: <b>+60</b> (good distraction!)</div>
+<div>🦴 Dog fetches bone: <b>+40</b> (good distraction!)</div>
 <div>🎾 Dog chases ball: <b>+80</b> (fetch! FETCH!)</div>
-<div>🧸 Dog gets squeaky toy: <b>+70</b> (squeak squeak! distracted!)</div>
+<div>🍗 Dog eats treat: <b>+60</b> (at least it stopped running)</div>
 <div>🛍️ Bag a poo: <b>+30</b> (responsible dog ownership™)</div>
 <div>🧑 Human grabs dog: <b>+50</b> (thank you kind stranger!)</div>
 </div>
@@ -275,7 +274,7 @@ const COLORS = {
   duck:'#F5F5F5', duckHead:'#2E8B57', duckBeak:'#FFA500',
   deer:'#C4A46C', deerDark:'#A08050', deerAntler:'#8B7355',
   otherDog:'#D2691E',
-  bone:'#F5F5DC', ball:'#9ACD32', food:'#DAA520', toy:'#FF69B4',
+  bone:'#F5F5DC', ball:'#9ACD32', food:'#DAA520',
   owner:'#4A90D9', ownerSkin:'#FDBCB4', ownerHair:'#4A3728'
 };
 
@@ -683,7 +682,6 @@ function sfx_bark() { playTone(300, 0.12, 'square', 0.35, 200); setTimeout(() =>
 function sfx_catch() { playTone(523, 0.15, 'sine', 0.35); setTimeout(() => playTone(659, 0.15, 'sine', 0.35), 100); setTimeout(() => playTone(784, 0.2, 'sine', 0.4), 200); }
 function sfx_hit() { playTone(100, 0.3, 'sawtooth', 0.4, -50); }
 function sfx_boost() { playTone(200, 0.4, 'sawtooth', 0.35, 600); }
-function sfx_squeak() { playTone(1200, 0.08, 'sine', 0.4); setTimeout(() => playTone(1500, 0.1, 'sine', 0.45), 60); setTimeout(() => playTone(1200, 0.08, 'sine', 0.35), 140); }
 function sfx_pickup() { playTone(880, 0.12, 'sine', 0.35); setTimeout(() => playTone(1100, 0.15, 'sine', 0.4), 80); }
 function sfx_quack() { playTone(250, 0.2, 'sawtooth', 0.35, 100); setTimeout(() => playTone(280, 0.15, 'sawtooth', 0.3, -50), 160); }
 
@@ -1738,26 +1736,6 @@ function drawPickup(p, camY) {
       ctx.fillRect(14, -3.5, 14, 7);
       ctx.beginPath(); ctx.arc(28, 0, 6, 0, Math.PI*2); ctx.fill();
       break;
-    case 'toy':
-      // Squeaky toy - cute rubber bone shape in pink
-      ctx.fillStyle = COLORS.toy;
-      // Body
-      ctx.beginPath(); ctx.ellipse(0, 0, 12, 8, 0, 0, Math.PI*2); ctx.fill();
-      // Left bulb
-      ctx.beginPath(); ctx.arc(-14, 0, 8, 0, Math.PI*2); ctx.fill();
-      // Right bulb
-      ctx.beginPath(); ctx.arc(14, 0, 8, 0, Math.PI*2); ctx.fill();
-      // Shine
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.beginPath(); ctx.arc(-14, -3, 3, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(14, -3, 3, 0, Math.PI*2); ctx.fill();
-      // Squeak lines
-      ctx.strokeStyle = 'rgba(255,105,180,0.6)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(-5, -12); ctx.lineTo(-3, -17); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -11); ctx.lineTo(0, -17); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(5, -12); ctx.lineTo(3, -17); ctx.stroke();
-      break;
   }
   ctx.restore();
 }
@@ -1979,7 +1957,7 @@ function spawnPickup() {
   const pathRight = spawnCX + pathHW;
   const r = Math.random();
 
-  const type = r < 0.25 ? 'bone' : r < 0.5 ? 'ball' : r < 0.75 ? 'food' : 'toy';
+  const type = r < 0.4 ? 'bone' : r < 0.7 ? 'ball' : 'food';
   pickups.push({
     type, x:rand(pathLeft, pathRight), y:spawnY, radius:20, alive:true
   });
@@ -2397,37 +2375,21 @@ function update(dt) {
           setTimeout(() => { dog.speed = BREEDS[selectedBreed].speed; }, 1200);
           break;
         case 'food':
-          // Drumstick gives DOG points - naughty chaos!
-          score += 70;
-          chaosPoints += 15;
-          spawnFloatText(p.x, psy, '🐕+70 🍗 NAUGHTY!', '#FF6B6B');
-          hudDogFlash('YUM!');
-          // Eating food triggers an urgent poo! More chaos!
+          ownerScore += 50;
+          spawnFloatText(p.x, psy, '👤+50 🍗', '#4A90D9');
+          hudOwnerFlash('TREAT!');
+          // Eating food triggers an urgent poo! Dog slows down, owner can catch up
           if (!dogPooing) {
             pooTimer = rand(1.5, 3.0); // poo coming VERY soon after eating
-            showCombo('🍗 NAUGHTY! 💩 UH OH...');
-            speakLine('NAUGHTY ' + (dogGender === 'girl' ? 'GIRL' : 'BOY') + '! LEAVE IT ' + dogName + '!', 1.1, 1.2);
+            showCombo('🍗 YUMMY! 💩 UH OH...');
+            speakLine(dogName + ' NO! DONT EAT THAT! Oh no...', 1.1, 1.2);
             lastVoiceTime = Date.now();
-            ownerSpeechBubble.text = 'NAUGHTY ' + (dogGender === 'girl' ? 'GIRL' : 'BOY') + '! LEAVE IT!';
+            ownerSpeechBubble.text = dogName + '!! SPIT IT OUT!!';
             ownerSpeechBubble.timer = 2.0;
             ownerSpeechBubble.maxTimer = 2.0;
+
+
           }
-          break;
-        case 'toy':
-          // Squeaky toy is an owner distraction - dog stops to play
-          ownerScore += 70;
-          spawnFloatText(p.x, psy, '👤+70 🧸 DISTRACTED!', '#4A90D9');
-          hudOwnerFlash('SQUEAKY!');
-          sfx_squeak();
-          showCombo('🧸 SQUEAK SQUEAK!');
-          speakLine(dogName + '! Look! Squeaky toy! Good ' + (dogGender === 'girl' ? 'girl' : 'boy') + '!', 1.0, 1.1);
-          lastVoiceTime = Date.now();
-          ownerSpeechBubble.text = 'SQUEAKY TOY ' + dogName + '! COME!';
-          ownerSpeechBubble.timer = 2.0;
-          ownerSpeechBubble.maxTimer = 2.0;
-          // Dog slows down playing with toy
-          dog.speed *= 0.45;
-          setTimeout(() => { dog.speed = BREEDS[selectedBreed].speed; }, 1500);
           break;
       }
     }

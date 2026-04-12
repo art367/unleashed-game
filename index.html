@@ -282,8 +282,8 @@ const COLORS = {
 const PANIC_LINES = [
   { threshold:0, lines:["{NAME}! Come here!","{NAME}! Come back!","{NAME}! Good dog, come!","{NAME}! Walkies!","{NAME}! Treat! Want a treat?"], rate:0.9, pitch:1.0 },
   { threshold:20, lines:["{NAME}!","{NAME}! Come here!","{NAME}! Bad dog!","{NAME}! No no no!","{NAME}! Come HERE!","{NAME}! Leave it!","{NAME}! DROP IT!"], rate:1.0, pitch:1.1 },
-  { threshold:45, lines:["{NAME}!!","{NAME}!! COME BACK!!","{NAME}!! STOP!!","Somebody grab {NAME}!","Oh for— {NAME}!!","{NAME}! NOT THE SQUIRRELS!","LEAVE THE DUCKS ALONE {NAME}!!","{NAME} I SWEAR TO GOD!"], rate:1.1, pitch:1.25 },
-  { threshold:70, lines:["OH JESUS CHRIST {NAME}!!","{NAME}!! OH GOD!!","{NAME}!! THE DEEEEER!!","OH MY GOD!! {NAME}!!","FENTOOOON!! I mean {NAME}!!","{NAME}!! NOT THE DUCKS!!","SOMEBODY STOP THAT DOG!!","{NAME}!! I'M GOING TO KILL YOU!!","{NAME} {NAME} {NAME}!!","OH NO OH NO {NAME}!!"], rate:1.3, pitch:1.45 }
+  { threshold:45, lines:["{NAME}!!","{NAME}!! COME BACK!!","{NAME}!! STOP!!","Somebody grab {NAME}!","Oh FUDGE! {NAME}!!","{NAME}! NOT THE SQUIRRELS!","LEAVE THE DUCKS ALONE {NAME}!!","Oh BLOOMIN NORA {NAME}!"], rate:1.1, pitch:1.25 },
+  { threshold:70, lines:["OH CRIKEY {NAME}!!","{NAME}!! OH SUGAR!!","{NAME}!! THE DEEEEER!!","OH FLIPPING HECK!! {NAME}!!","FENTOOOON!! I mean {NAME}!!","{NAME}!! NOT THE DUCKS!!","SOMEBODY STOP THAT DOG!!","BLOOMING HECK {NAME}!!","{NAME} {NAME} {NAME}!!","OH FUDGE OH FUDGE {NAME}!!"], rate:1.3, pitch:1.45 }
 ];
 // ==================== VOICE SYSTEM (Browser Speech Synthesis) ====================
 // Uses the browser's built-in text-to-speech for that funny electronic voice
@@ -399,14 +399,14 @@ function shoutName() {
   var lines;
   if (panic >= 80) {
     lines = [
-      'For fucks sake ' + dogN + '!!',
-      'Bloody dog!!',
-      'OH MY GOD ' + dogN + '!!',
+      'Oh FUDGE ' + dogN + '!!',
+      'Blooming dog!!',
+      'OH CRIKEY ' + dogN + '!!',
       'SOMEBODY STOP THAT DOG!!',
-      dogN + '!! I SWEAR TO GOD!!',
+      dogN + '!! OH BLOOMIN NORA!!',
       'OH THATS NOT MY DOG! YES IT IS! ' + dogN + '!!',
       dogN + '!! WHAT HAS ' + heShe + ' DONE NOW!!',
-      'I AM GOING TO KILL THAT DOG!!'
+      'I AM GOING TO BLOOMING LOSE IT!!'
     ];
   } else if (panic >= 50) {
     lines = [
@@ -2265,22 +2265,22 @@ function update(dt) {
         'squirrel': [
           'NOT THE SQUIRRELS ' + dogName + '!!',
           dogName + '!! LEAVE THE SQUIRRELS!!',
-          'OH GOD ' + dogName + ' NOT THE SQUIRRELS!',
+          'OH CRIKEY ' + dogName + ' NOT THE SQUIRRELS!',
           dogName + '!! THEY LIVE HERE!!'
         ],
         'duck': [
           'OH NO NOT THE DUCKS!!',
           dogName + '!! LEAVE THE DUCKS ALONE!!',
-          'NOT THE DUCKS ' + dogName + '!! OH GOD!!',
+          'NOT THE DUCKS ' + dogName + '!! OH SUGAR!!',
           dogName + '!! THE DUCKS HAVE BABIES!!',
           'OH NO ' + dogName + '!! NOT THE DUCKS!!'
         ],
         'deer': [
-          'OH JESUS CHRIST THE DEER!!',
+          'OH FLIPPING HECK THE DEER!!',
           dogName + '!! NOT THE DEER!!',
           'THE DEEEEER!! ' + dogName + '!!',
           'LEAVE THE BABY LAMBS!! I MEAN DEER!!',
-          'OH GOD ' + dogName + '!! LEAVE THE DEER ALONE!!',
+          'OH CRIKEY ' + dogName + '!! LEAVE THE DEER ALONE!!',
           dogName + '!! LEAVE THE BABY DEER!!'
         ],
         'dog': [
@@ -2367,7 +2367,7 @@ function update(dt) {
           const helpShouts = [
             'GRAB HIM! PLEASE!',
             'YES! SOMEONE HELP!',
-            'THANK GOD! GRAB ' + dogName + '!',
+            'OH THANK GOODNESS! GRAB ' + dogName + '!',
             'STOP THAT DOG PLEASE!'
           ];
           ownerSpeechBubble.text = helpShouts[Math.floor(Math.random() * helpShouts.length)];
@@ -2535,7 +2535,7 @@ function update(dt) {
         dogName + '!! GET OUT OF THE WATER!! YOU ARE SOAKING!!',
         'OH NO NOW YOU ARE ALL WET ' + dogName + '!!',
         dogName + '!! YOU ARE SOAKING WET!! COME HERE!!',
-        'OH GOD ' + dogName + '!! NOW YOU SMELL LIKE POND!!',
+        'OH SUGAR ' + dogName + '!! NOW YOU SMELL LIKE POND!!',
         dogName + '!! NOT THE DUCK POND!! OH YOU ARE DRENCHED!!',
         'OH ' + dogName + '!! NOW YOU ARE ALL WET!! GREAT!!',
         'BRILLIANT ' + dogName + '!! NOW YOU ARE SOPPING WET!!'
@@ -2590,7 +2590,7 @@ function update(dt) {
       var treeWeeShouts = [
         dogName + '! NOT ON THE TREE! OH COME ON!',
         dogName + '!! STOP WEEING ON EVERYTHING!!',
-        'Oh for GOODNESS sake ' + dogName + '! Not ANOTHER tree!',
+        'Oh BLOOMIN NORA ' + dogName + '! Not ANOTHER tree!',
         dogName + '! WE DONT WEE ON TREES!!',
         'EVERY tree ' + dogName + '! REALLY?!'
       ];
@@ -2644,7 +2644,7 @@ function update(dt) {
       // Park keeper shouts "Got ya!" in a distinct deep authoritative voice
       // Park keeper voice handled by playVoice
 
-      ownerSpeechBubble.text = 'Oh thank GOD! The keeper got ' + dogName + '!';
+      ownerSpeechBubble.text = 'Oh THANK GOODNESS! The keeper got ' + dogName + '!';
       ownerSpeechBubble.timer = 3.0;
       ownerSpeechBubble.maxTimer = 3.0;
       speakLine(ownerSpeechBubble.text, 0.9, 1.0);
@@ -2738,7 +2738,7 @@ function update(dt) {
       hudOwnerFlash('POO STOP!');
       panicLevel = clamp(panicLevel + 10, 0, 100);
 
-      ownerSpeechBubble.text = 'OH FOR GODS SAKE ' + dogName + '!!';
+      ownerSpeechBubble.text = 'OH FOR GOODNESS SAKE ' + dogName + '!!';
       ownerSpeechBubble.timer = 2.0;
       ownerSpeechBubble.maxTimer = 2.0;
       speakLine(ownerSpeechBubble.text, 1.2, 1.3);
@@ -2769,7 +2769,7 @@ function update(dt) {
       hudOwnerFlash('WEE STOP!');
 
       const weeLines = [
-        'Oh for GODS sake ' + dogName + '!',
+        'Oh for GOODNESS sake ' + dogName + '!',
         'EVERY. SINGLE. TREE. ' + dogName + '!!',
         dogName + '!! That is DISGUSTING!!',
         'I am SO sorry about the tree!'

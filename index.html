@@ -2412,14 +2412,16 @@ function update(dt) {
       spawnFloatText(dog.x, dog.y - camera.y - 20, 'SPLASH! 💦', '#74C0E3');
       showCombo('💦 SPLASH!!');
 
-      // Owner reacts to the pond
+      // Owner reacts to the pond - dog is soaking wet!
       const pondShouts = [
-        'OH NO ' + dogName + '!! NOT THE POND!!',
-        dogName + '!! GET OUT OF THE WATER!!',
-        dogName + '!! OH NO NOT THE DUCKS!!',
-        'THE DUCKS ' + dogName + '!! LEAVE THE DUCKS!!',
-        dogName + '!! YOU ARE SOAKING WET!! NO!!',
-        'OH GOD ' + dogName + ' NOT THE DUCK POND!!'
+        'OH NO ' + dogName + '!! NOW YOU ARE ALL WET!!',
+        dogName + '!! GET OUT OF THE WATER!! YOU ARE SOAKING!!',
+        'OH NO NOW YOU ARE ALL WET ' + dogName + '!!',
+        dogName + '!! YOU ARE SOAKING WET!! COME HERE!!',
+        'OH GOD ' + dogName + '!! NOW YOU SMELL LIKE POND!!',
+        dogName + '!! NOT THE DUCK POND!! OH YOU ARE DRENCHED!!',
+        'OH ' + dogName + '!! NOW YOU ARE ALL WET!! GREAT!!',
+        'BRILLIANT ' + dogName + '!! NOW YOU ARE SOPPING WET!!'
       ];
       const pondShout = pondShouts[Math.floor(Math.random() * pondShouts.length)];
       ownerSpeechBubble.text = pondShout;
@@ -2439,35 +2441,7 @@ function update(dt) {
       gameSpeed = Math.max(1.5, gameSpeed - 0.3);
       setTimeout(() => { if (state === 'playing') gameSpeed += 0.3; }, 500);
 
-      // Dog needs a wee up a tree after the pond!
-      if (!dogWeeing && !dogPooing) {
-        setTimeout(() => {
-          if (state === 'playing' && !dogWeeing && !dogPooing) {
-            dogWeeing = true;
-            weeTimer = 2.0;
-            // Find nearest tree from scenery
-            let nearestTree = null;
-            let nearestDist = Infinity;
-            for (let sc of scenery) {
-              if (sc.type === 'tree') {
-                const td = Math.abs(sc.x - dog.x) + Math.abs(sc.y - dog.y);
-                if (td < nearestDist) { nearestDist = td; nearestTree = sc; }
-              }
-            }
-            weeTreeX = nearestTree ? nearestTree.x : dog.x + 40;
-            weeTreeY = nearestTree ? nearestTree.y : dog.y;
-            showCombo('🌳💦 MARKING TERRITORY!');
-            speakLine(dogName + '! NOT ON THE TREE! OH COME ON!', 1.2, 1.3);
-            lastVoiceTime = Date.now();
-            ownerSpeechBubble.text = dogName + '!! NOT ON THE TREE!!';
-            ownerSpeechBubble.timer = 2.5;
-            ownerSpeechBubble.maxTimer = 2.5;
-
-
-            panicLevel = clamp(panicLevel + 8, 0, 100);
-          }
-        }, 600);
-      }
+      // Pond is just a wet splash event - wee happens independently near trees
     }
     // Reset splash when dog leaves
     if (!inPond && s.splashed) {
@@ -2855,30 +2829,77 @@ function render() {
     ctx.textAlign = 'center';
     ctx.fillText('😣', dog.x, dog.y - camY - 25);
   } else if (dogWeeing) {
-    // Dog cocking leg against tree
-    ctx.save();
+    // Dog cocking leg against a LARGE TREE
     const weeScreenY = dog.y - camY;
-    // Tilt the dog slightly to show leg raised
+    const weeDir = weeTreeX > dog.x ? 1 : -1;
+    const treeBaseX = dog.x + weeDir * 50;
+    const treeBaseY = weeScreenY + 10;
+
+    // ---- Draw large tree graphic ----
+    // Thick trunk
+    ctx.fillStyle = '#6B4226';
+    ctx.fillRect(treeBaseX - 10, treeBaseY - 60, 20, 70);
+    // Bark texture lines
+    ctx.strokeStyle = '#5A3520';
+    ctx.lineWidth = 1;
+    for (let bk = 0; bk < 5; bk++) {
+      ctx.beginPath();
+      ctx.moveTo(treeBaseX - 6 + bk * 3, treeBaseY - 55 + bk * 10);
+      ctx.lineTo(treeBaseX - 4 + bk * 3, treeBaseY - 45 + bk * 10);
+      ctx.stroke();
+    }
+    // Large canopy layers (multiple circles for full look)
+    ctx.fillStyle = '#2D8C3C';
+    ctx.beginPath();
+    ctx.arc(treeBaseX, treeBaseY - 75, 35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#3AA84D';
+    ctx.beginPath();
+    ctx.arc(treeBaseX - 12, treeBaseY - 65, 25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(treeBaseX + 14, treeBaseY - 68, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#48C25E';
+    ctx.beginPath();
+    ctx.arc(treeBaseX + 5, treeBaseY - 85, 20, 0, Math.PI * 2);
+    ctx.fill();
+    // Highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.beginPath();
+    ctx.arc(treeBaseX - 8, treeBaseY - 80, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ---- Draw the dog facing the tree, leg cocked ----
+    ctx.save();
     ctx.translate(dog.x, weeScreenY);
-    const treeDir = weeTreeX > dog.x ? 1 : -1;
-    ctx.scale(treeDir, 1); // face the tree
+    ctx.scale(weeDir, 1); // face the tree
     ctx.translate(-dog.x, -weeScreenY);
     drawDog(dog.x, weeScreenY, dog.breed, dog.runPhase * 0.05, false);
     ctx.restore();
-    // Draw the wee stream 💦
-    const weeDir = weeTreeX > dog.x ? 1 : -1;
+
+    // ---- Draw the wee stream arc ----
     ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([3, 3]);
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([4, 3]);
     ctx.beginPath();
-    ctx.moveTo(dog.x + weeDir * 18, weeScreenY + 5);
-    ctx.quadraticCurveTo(dog.x + weeDir * 30, weeScreenY - 10, dog.x + weeDir * 38, weeScreenY - 5);
+    ctx.moveTo(dog.x + weeDir * 18, weeScreenY + 2);
+    ctx.quadraticCurveTo(dog.x + weeDir * 32, weeScreenY - 15, treeBaseX - weeDir * 8, treeBaseY - 10);
     ctx.stroke();
     ctx.setLineDash([]);
-    // Leg raised emoji
-    ctx.font = 'bold 14px sans-serif';
+    // Wee droplets hitting the trunk
+    const splashT = Date.now() / 200;
+    ctx.fillStyle = '#FFD700';
+    for (let d = 0; d < 3; d++) {
+      const dy = Math.sin(splashT + d * 2) * 5;
+      ctx.beginPath();
+      ctx.arc(treeBaseX - weeDir * 6 + d * 2, treeBaseY - 8 + dy, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // 💦 label above
+    ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🌳💦', dog.x, weeScreenY - 30);
+    ctx.fillText('💦', treeBaseX, treeBaseY - 110);
   } else {
     drawDog(dog.x, dog.y - camY, dog.breed, dog.runPhase, dashActive);
   }

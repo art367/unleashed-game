@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🔊 Bleep Demo - UNLEASHED!</title>
+<style>
+body{background:#1a1a2e;color:#fff;font-family:system-ui;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}
+h1{font-size:2rem;margin-bottom:8px}
+.sub{color:rgba(255,255,255,0.5);margin-bottom:30px;text-align:center}
+.btn{background:rgba(255,107,107,0.2);border:2px solid rgba(255,107,107,0.4);color:#fff;padding:14px 28px;border-radius:16px;font-size:1.1rem;cursor:pointer;margin:8px;transition:all 0.2s;min-width:280px;text-align:left}
+.btn:hover{background:rgba(255,107,107,0.35);transform:scale(1.03)}
+.btn:active{transform:scale(0.97)}
+.section{margin:20px 0;text-align:center}
+.label{color:rgba(255,255,255,0.4);font-size:0.8rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
+.note{color:rgba(255,255,255,0.3);font-size:0.75rem;margin-top:30px;text-align:center;max-width:400px}
+.male{border-color:rgba(74,144,217,0.4);background:rgba(74,144,217,0.15)}
+.male:hover{background:rgba(74,144,217,0.3)}
+.female{border-color:rgba(232,160,191,0.4);background:rgba(232,160,191,0.15)}
+.female:hover{background:rgba(232,160,191,0.3)}
+</style>
+</head><body>
+<h1>🔊 Bleep Demo</h1>
+<div class="sub">What bleeped owner lines could sound like in UNLEASHED!</div>
+
+<div class="section">
+<div class="label">👨 Male Owner (Calm → Furious)</div>
+<button class="btn male" onclick="playBleep('Oh for BLEEP sake FENTON!','male',1.0,1.0)">😤 "Oh for *BLEEP* sake FENTON!"</button>
+<button class="btn male" onclick="playBleep('BLEEP ing dog! Get back here!','male',1.1,1.0)">🤬 "*BLEEP*ing dog! Get back here!"</button>
+<button class="btn male" onclick="playBleep('FENTON you BLEEP ing BLEEP ! LEAVE THE DUCKS!','male',1.2,1.1)">💀 "FENTON you *BLEEP*ing *BLEEP*! LEAVE THE DUCKS!"</button>
+<button class="btn male" onclick="playBleep('Oh BLEEP oh BLEEP oh BLEEP ! NOT THE DEER!','male',1.3,1.0)">😱 "Oh *BLEEP* oh *BLEEP*! NOT THE DEER!"</button>
+<button class="btn male" onclick="playBleep('I am so BLEEP ing sorry everyone!','male',0.9,0.9)">😰 "I am so *BLEEP*ing sorry everyone!"</button>
+</div>
+
+<div class="section">
+<div class="label">👩 Female Owner (Calm → Furious)</div>
+<button class="btn female" onclick="playBleep('Oh for BLEEP sake FENTON!','female',1.05,1.5)">😤 "Oh for *BLEEP* sake FENTON!"</button>
+<button class="btn female" onclick="playBleep('BLEEP ing hell FENTON! Come HERE!','female',1.1,1.5)">🤬 "*BLEEP*ing hell FENTON! Come HERE!"</button>
+<button class="btn female" onclick="playBleep('FENTON you little BLEEP! LEAVE IT!','female',1.15,1.5)">💀 "FENTON you little *BLEEP*! LEAVE IT!"</button>
+<button class="btn female" onclick="playBleep('Oh BLEEP BLEEP BLEEP! The park keeper!','female',1.2,1.55)">😱 "Oh *BLEEP BLEEP BLEEP*! The park keeper!"</button>
+<button class="btn female" onclick="playBleep('I am NEVER BLEEP ing bringing you here again!','female',0.93,1.45)">😰 "I am NEVER *BLEEP*ing bringing you here again!"</button>
+</div>
+
+<div class="note">
+💡 This is just a demo! The bleep is a classic 1kHz TV censor tone spliced into the speech synthesis.<br>
+Each BLEEP replaces the naughty word with a short sine wave beep — sounds hilarious with the robotic voice.
+</div>
+
+<script>
+var audioCtx = null;
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playBleepTone(startTime, duration) {
+  if (!audioCtx) return;
+  var o = audioCtx.createOscillator();
+  var g = audioCtx.createGain();
+  o.type = 'sine';
+  o.frequency.value = 1000; // Classic TV censor bleep frequency
+  g.gain.setValueAtTime(0.3, startTime);
+  // Quick fade in/out for smoothness
+  g.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
+  g.gain.linearRampToValueAtTime(0, startTime + duration - 0.02);
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  o.start(startTime);
+  o.stop(startTime + duration);
+}
+
+function playBleep(text, gender, rate, pitch) {
+  ensureAudio();
+  if (typeof speechSynthesis === 'undefined') { alert('Speech synthesis not available'); return; }
+  
+  speechSynthesis.cancel();
+  
+  // Split text on BLEEP markers
+  var parts = text.split('BLEEP');
+  var delay = 0;
+  
+  for (var i = 0; i < parts.length; i++) {
+    (function(part, idx, currentDelay) {
+      setTimeout(function() {
+        if (part.trim()) {
+          var utter = new SpeechSynthesisUtterance(part.trim());
+          var voices = speechSynthesis.getVoices();
+          
+          if (gender === 'female') {
+            var femVoice = voices.find(function(v) { return v.lang.includes('en') && v.name.toLowerCase().includes('female'); })
+              || voices.find(function(v) { return v.lang.includes('en-GB'); });
+            if (femVoice) utter.voice = femVoice;
+            utter.pitch = pitch || 1.5;
+            utter.rate = rate || 1.05;
+          } else {
+            var maleVoice = voices.find(function(v) { return v.lang.includes('en-GB') && v.name.toLowerCase().includes('male'); })
+              || voices.find(function(v) { return v.lang.includes('en-GB'); })
+              || voices.find(function(v) { return v.lang.includes('en'); });
+            if (maleVoice) utter.voice = maleVoice;
+            utter.pitch = pitch || 1.0;
+            utter.rate = rate || 1.0;
+          }
+          utter.volume = 1.0;
+          speechSynthesis.speak(utter);
+        }
+        
+        // If there's a next part, play a bleep after this part
+        if (idx < parts.length - 1) {
+          var bleepDelay = part.trim().length * (50 / (rate || 1.0)); // estimate speech duration
+          setTimeout(function() {
+            playBleepTone(audioCtx.currentTime, 0.25);
+          }, bleepDelay);
+        }
+      }, currentDelay);
+    })(parts[i], i, delay);
+    
+    // Estimate timing for each chunk
+    delay += parts[i].trim().length * (55 / (rate || 1.0)) + 280;
+  }
+}
+
+// Preload voices
+if (typeof speechSynthesis !== 'undefined') {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = function() { speechSynthesis.getVoices(); };
+}
+</script>
+</body></html>

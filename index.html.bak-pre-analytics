@@ -3095,11 +3095,6 @@ function hideTutorial() {
 }
 
 function startGame() {
-  // Track game start + breed in GoatCounter
-  if (window.goatcounter && goatcounter.count) {
-    goatcounter.count({ path: 'game-start', title: 'Game Started', event: true });
-    goatcounter.count({ path: 'breed-' + selectedBreed, title: 'Breed: ' + selectedBreed, event: true });
-  }
   ensureAudio();
   // Unlock speechSynthesis on user gesture (critical for iOS Safari)
   if (typeof speechSynthesis !== 'undefined') {
@@ -3134,10 +3129,6 @@ function startGame() {
 }
 
 function gameOver() {
-  // Track game over in GoatCounter
-  if (window.goatcounter && goatcounter.count) {
-    goatcounter.count({ path: 'game-over', title: 'Game Over', event: true });
-  }
   // Hide poo bag button
   var bagBtn = document.getElementById('pooBagBtn');
   if (bagBtn) bagBtn.classList.remove('active');
@@ -3479,8 +3470,5 @@ document.addEventListener('touchstart', function() { if (state === 'menu' || sta
 document.addEventListener('keydown', function() { if (state === 'menu' || state === 'playing') tryPlayMusic(); });
 
 </script>
-<!-- GoatCounter: free, privacy-friendly analytics (no cookies, no GDPR) -->
-<script data-goatcounter="https://unleashed-game.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

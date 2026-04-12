@@ -2483,11 +2483,27 @@ function update(dt) {
           hudOwnerFlash('SQUEAKY!');
           sfx_squeak();
           showCombo('🧸 SQWEEEEK!');
-          speakLine(dogName + '! Good doggy! Good doggy! Come here!', 1.0, 1.1);
+          // Pleased cooing baby-talk tone - slower, softer, adoring
+          var teddyLines = [
+            'Ohhh! Who\'s my little baby! Who\'s a good ' + (dogGender === 'boy' ? 'boy' : 'girl') + '!',
+            'Awww ' + dogName + '! Who\'s mummy\'s little baby! Yes you are!',
+            'Ohhh ' + dogName + '! Come to ' + (ownerGender === 'female' ? 'mummy' : 'daddy') + '! Who\'s my baby!',
+            'There\'s a good ' + (dogGender === 'boy' ? 'boy' : 'girl') + '! Ohhh who\'s my little baby ' + dogName + '!',
+            'Awww look at you! Who\'s ' + (ownerGender === 'female' ? 'mummy' : 'daddy') + '\'s little angel!'
+          ];
+          var teddyLine = teddyLines[Math.floor(Math.random() * teddyLines.length)];
+          speakLine(teddyLine, 0.85, 0.95);
           lastVoiceTime = Date.now();
-          ownerSpeechBubble.text = 'GOOD DOGGY ' + dogName + '!';
-          ownerSpeechBubble.timer = 2.0;
-          ownerSpeechBubble.maxTimer = 2.0;
+          var teddyBubbles = [
+            'WHO\'S MY LITTLE BABY! 🧸',
+            'AWWW ' + dogName + '! 🧸❤️',
+            'COME TO ' + (ownerGender === 'female' ? 'MUMMY' : 'DADDY') + '! 🧸',
+            'WHO\'S A GOOD ' + (dogGender === 'boy' ? 'BOY' : 'GIRL') + '! 🧸❤️',
+            'MY LITTLE ANGEL! 🧸'
+          ];
+          ownerSpeechBubble.text = teddyBubbles[Math.floor(Math.random() * teddyBubbles.length)];
+          ownerSpeechBubble.timer = 2.5;
+          ownerSpeechBubble.maxTimer = 2.5;
           // Dog slows down playing with toy
           dog.speed *= 0.45;
           setTimeout(() => { dog.speed = BREEDS[selectedBreed].speed; }, 1500);

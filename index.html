@@ -23,7 +23,8 @@
 <meta name="twitter:image" content="https://art367.github.io/unleashed-game/icon-512.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#1a1a2e;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:#1a1a2e;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
 canvas{display:block;position:absolute;top:0;left:0;z-index:0}
 #ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10}
 .screen{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;pointer-events:auto}
@@ -792,9 +793,23 @@ function spawnSplash(x, y) {
 }
 
 // ==================== RESIZE ====================
+var isEmbedded = (window.self !== window.top); // true inside itch.io iframe
 function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
+  var w, h;
+  if (isEmbedded) {
+    // Inside an iframe (itch.io etc) — use the actual available space
+    w = document.documentElement.clientWidth;
+    h = document.documentElement.clientHeight;
+  } else {
+    w = window.innerWidth;
+    h = window.innerHeight;
+  }
+  W = canvas.width = w;
+  H = canvas.height = h;
+  canvas.style.left = '0px';
+  canvas.style.top = '0px';
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
 }
 window.addEventListener('resize', resize);
 resize();

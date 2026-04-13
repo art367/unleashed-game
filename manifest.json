@@ -1,0 +1,29 @@
+{
+  "name": "UNLEASHED! - Dog Park Chaos",
+  "short_name": "UNLEASHED!",
+  "description": "Your dog's slipped the lead and chaos is about to happen! An endless runner where YOU are the naughty dog causing mayhem in the park.",
+  "start_url": "/unleashed-game/",
+  "scope": "/unleashed-game/",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#1a1a2e",
+  "theme_color": "#FFD93D",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

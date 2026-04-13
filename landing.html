@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNLEASHED! 🐕 — The Dog Park Chaos Game</title>
+<meta name="description" content="Your dog's slipped the lead — chaos is about to happen! A free browser game where YOU are the naughty dog causing mayhem in the park.">
+<meta property="og:title" content="UNLEASHED! 🐕 — Dog Park Chaos">
+<meta property="og:description" content="Your dog's slipped the lead and chaos is about to happen! Play as a naughty dog causing mayhem in the park while your owner chases behind.">
+<meta property="og:image" content="https://art367.github.io/unleashed-game/icon-512.png">
+<meta property="og:url" content="https://art367.github.io/unleashed-game/landing.html">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.ico">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#fff;min-height:100vh;overflow-x:hidden}
+
+/* Hero */
+.hero{text-align:center;padding:60px 20px 40px;background:linear-gradient(180deg,#1a1a2e 0%,#2d1b69 50%,#1a1a2e 100%);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 50% 30%,rgba(255,217,61,0.1) 0%,transparent 60%)}
+.hero h1{font-size:clamp(3rem,10vw,6rem);color:#FFD93D;text-shadow:0 0 40px rgba(255,217,61,0.4),0 4px 0 #e6a800;letter-spacing:3px;animation:bounce 2s ease infinite;position:relative}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.hero .tagline{font-size:clamp(1.1rem,3vw,1.6rem);color:rgba(255,255,255,0.85);margin:12px 0 8px;font-style:italic}
+.hero .sub{color:rgba(255,255,255,0.55);font-size:clamp(0.85rem,2vw,1rem);margin-bottom:30px}
+.icon-preview{width:160px;height:160px;border-radius:32px;box-shadow:0 8px 40px rgba(255,217,61,0.3);margin:0 auto 30px;display:block}
+
+.play-btn{display:inline-block;background:linear-gradient(135deg,#FF6B6B,#ee5a24);color:#fff;font-size:clamp(1.3rem,4vw,1.8rem);padding:18px 60px;border-radius:50px;text-decoration:none;font-weight:bold;letter-spacing:1px;box-shadow:0 6px 25px rgba(255,107,107,0.4);transition:all 0.3s;animation:pulse 2s ease infinite}
+.play-btn:hover{transform:scale(1.08);box-shadow:0 8px 35px rgba(255,107,107,0.6)}
+@keyframes pulse{0%,100%{box-shadow:0 6px 25px rgba(255,107,107,0.4)}50%{box-shadow:0 6px 35px rgba(255,107,107,0.7)}}
+
+/* Features */
+.features{padding:50px 20px;max-width:900px;margin:0 auto}
+.features h2{text-align:center;font-size:clamp(1.5rem,4vw,2.2rem);color:#FFD93D;margin-bottom:35px}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.feature{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:24px;text-align:center;transition:transform 0.3s}
+.feature:hover{transform:translateY(-4px);border-color:rgba(255,217,61,0.3)}
+.feature .icon{font-size:2.5rem;margin-bottom:10px;display:block}
+.feature h3{color:#FFD93D;font-size:1.1rem;margin-bottom:6px}
+.feature p{color:rgba(255,255,255,0.6);font-size:0.9rem;line-height:1.5}
+
+/* Breeds */
+.breeds{padding:50px 20px;background:rgba(255,255,255,0.02)}
+.breeds h2{text-align:center;font-size:clamp(1.5rem,4vw,2.2rem);color:#FFD93D;margin-bottom:10px}
+.breeds .sub{text-align:center;color:rgba(255,255,255,0.5);margin-bottom:30px;font-size:0.95rem}
+.breed-row{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;max-width:700px;margin:0 auto}
+.breed-tag{background:rgba(255,217,61,0.1);border:2px solid rgba(255,217,61,0.3);border-radius:50px;padding:10px 22px;font-size:0.95rem;color:#FFD93D;font-weight:600}
+
+/* How it works */
+.how{padding:50px 20px;max-width:700px;margin:0 auto}
+.how h2{text-align:center;font-size:clamp(1.5rem,4vw,2.2rem);color:#FFD93D;margin-bottom:30px}
+.steps{display:flex;flex-direction:column;gap:16px}
+.step{display:flex;align-items:flex-start;gap:16px;background:rgba(255,255,255,0.03);border-radius:12px;padding:18px}
+.step-num{background:#FF6B6B;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0;font-size:1.1rem}
+.step-text h3{color:#fff;font-size:1rem;margin-bottom:4px}
+.step-text p{color:rgba(255,255,255,0.55);font-size:0.85rem;line-height:1.4}
+
+/* Reviews */
+.reviews{padding:50px 20px;text-align:center}
+.reviews h2{font-size:clamp(1.5rem,4vw,2.2rem);color:#FFD93D;margin-bottom:30px}
+.review-grid{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;max-width:800px;margin:0 auto}
+.review{background:rgba(255,255,255,0.05);border-radius:12px;padding:20px;max-width:240px;text-align:left}
+.review .stars{color:#FFD93D;font-size:1.1rem;margin-bottom:8px}
+.review .text{color:rgba(255,255,255,0.7);font-size:0.85rem;line-height:1.5;font-style:italic;margin-bottom:8px}
+.review .author{color:rgba(255,255,255,0.4);font-size:0.75rem}
+
+/* CTA */
+.cta{padding:50px 20px;text-align:center;background:linear-gradient(180deg,transparent,rgba(255,107,107,0.05))}
+.cta h2{font-size:clamp(1.5rem,4vw,2rem);color:#fff;margin-bottom:8px}
+.cta p{color:rgba(255,255,255,0.6);margin-bottom:24px;font-size:0.95rem}
+
+/* Footer */
+footer{text-align:center;padding:30px 20px;color:rgba(255,255,255,0.3);font-size:0.75rem;border-top:1px solid rgba(255,255,255,0.05)}
+footer a{color:rgba(255,217,61,0.5);text-decoration:none}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <img src="icon-512.png" alt="UNLEASHED! Game Icon" class="icon-preview">
+  <h1>UNLEASHED!</h1>
+  <p class="tagline">Your dog's slipped the lead... chaos is about to happen! 🐾💨</p>
+  <p class="sub">A free browser game — no download needed. Play on any device.</p>
+  <a href="index.html" class="play-btn">🐾 PLAY NOW — FREE!</a>
+</section>
+
+<section class="features">
+  <h2>What Makes It Brilliant</h2>
+  <div class="feature-grid">
+    <div class="feature">
+      <span class="icon">🐕</span>
+      <h3>5 Unique Breeds</h3>
+      <p>Labrador, Greyhound, Terrier, Pug, or Great Dane — each with different speed, stamina, and agility</p>
+    </div>
+    <div class="feature">
+      <span class="icon">😱</span>
+      <h3>Panicking Owner</h3>
+      <p>Your owner chases behind shouting increasingly desperate (and hilarious) things as chaos builds</p>
+    </div>
+    <div class="feature">
+      <span class="icon">💩</span>
+      <h3>Poo Mechanics</h3>
+      <p>Your dog slows to poo... bag it for owner points, leave it for dog points. The eternal dilemma.</p>
+    </div>
+    <div class="feature">
+      <span class="icon">🎯</span>
+      <h3>Dog vs Owner</h3>
+      <p>Two competing scores — are you a naughty chaos dog or a responsible owner? WHO WINS?</p>
+    </div>
+    <div class="feature">
+      <span class="icon">🧸</span>
+      <h3>Squeaky Teddy</h3>
+      <p>Find the teddy bear squeaky toy! "Who's my little baby!" — instant owner points</p>
+    </div>
+    <div class="feature">
+      <span class="icon">👮</span>
+      <h3>Park Keepers</h3>
+      <p>Dodge the park keepers or it's GAME OVER. "Oi! Got you!" BUSTED!</p>
+    </div>
+  </div>
+</section>
+
+<section class="breeds">
+  <h2>Choose Your Chaos Companion</h2>
+  <p class="sub">Each breed plays differently — who's YOUR favourite troublemaker?</p>
+  <div class="breed-row">
+    <div class="breed-tag">🐕 Labrador</div>
+    <div class="breed-tag">🐕 Greyhound</div>
+    <div class="breed-tag">🐕 Terrier</div>
+    <div class="breed-tag">🐕 Pug</div>
+    <div class="breed-tag">🐕 Great Dane</div>
+  </div>
+</section>
+
+<section class="how">
+  <h2>How To Play</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        <h3>Pick Your Dog</h3>
+        <p>Choose a breed and name your troublemaker. Pick male or female owner for different voice hilarity.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        <h3>Cause Chaos</h3>
+        <p>Swipe or arrow keys to dodge, dash into people, steal picnics, chase ducks, wee up trees...</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        <h3>Dodge the Park Keeper</h3>
+        <p>Get caught and it's BUSTED! Game over, back on the lead. Avoid at all costs!</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text">
+        <h3>Share Your Chaos Rating</h3>
+        <p>From "Good Boy" to "Absolute Menace" — share your score and challenge your mates!</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="reviews">
+  <h2>What Players Say</h2>
+  <div class="review-grid">
+    <div class="review">
+      <div class="stars">⭐⭐⭐⭐⭐</div>
+      <div class="text">"The owner shouting 'OH FUDGE' while my Great Dane steals a picnic is the funniest thing I've played all year"</div>
+      <div class="author">— Dog Owner, probably</div>
+    </div>
+    <div class="review">
+      <div class="stars">⭐⭐⭐⭐⭐</div>
+      <div class="text">"My actual dog watched me play this and looked guilty. 10/10 realism."</div>
+      <div class="author">— Someone on the internet</div>
+    </div>
+    <div class="review">
+      <div class="stars">⭐⭐⭐⭐⭐</div>
+      <div class="text">"I can't stop trying to get the highest poo count. What has my life become."</div>
+      <div class="author">— A concerned adult</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <h2>Ready to Cause Some Chaos? 🐾</h2>
+  <p>Free. No download. Works on phones, tablets, and computers.</p>
+  <a href="index.html" class="play-btn">🐾 PLAY NOW!</a>
+</section>
+
+<footer>
+  <p>UNLEASHED! © 2026 — Made with ❤️ and dog treats<br>
+  <a href="index.html">Play Game</a></p>
+</footer>
+
+<!-- GoatCounter -->
+<script data-goatcounter="https://unleashed-game.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

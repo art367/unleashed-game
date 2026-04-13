@@ -4,6 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
 <title>UNLEASHED! 🐕</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="UNLEASHED!">
+<meta name="theme-color" content="#FFD93D">
+<meta name="description" content="Your dog's slipped the lead — chaos is about to happen! An endless runner where YOU are the naughty dog causing mayhem in the park.">
+<meta property="og:title" content="UNLEASHED! 🐕 — Dog Park Chaos">
+<meta property="og:description" content="Your dog's slipped the lead and chaos is about to happen! Play as a naughty dog causing mayhem in the park while your owner chases behind.">
+<meta property="og:image" content="https://art367.github.io/unleashed-game/icon-512.png">
+<meta property="og:url" content="https://art367.github.io/unleashed-game/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="UNLEASHED! 🐕 — Dog Park Chaos">
+<meta name="twitter:description" content="Your dog's slipped the lead — play as a naughty dog causing mayhem in the park!">
+<meta name="twitter:image" content="https://art367.github.io/unleashed-game/icon-512.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#1a1a2e;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -104,6 +121,8 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 <button class="start-btn" onclick="showTutorial()" style="background:rgba(255,255,255,0.1);font-size:clamp(0.8rem,2.5vw,1rem);padding:8px 24px;margin-bottom:6px">📖 HOW TO PLAY</button>
 <button class="start-btn" onclick="startGame()">🐾 LET'S GO!</button>
 <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px">Arrow keys / touch to move • Space / tap to dash • B to bag poo</div>
+<button id="installBtn" class="start-btn" onclick="installPWA()" style="display:none;background:linear-gradient(135deg,#4CAF50,#2E7D32);font-size:clamp(0.8rem,2.5vw,1rem);padding:10px 28px;margin-top:8px">📲 INSTALL APP</button>
+<button class="start-btn" onclick="shareGame()" style="background:rgba(255,255,255,0.1);font-size:clamp(0.7rem,2vw,0.85rem);padding:6px 20px;margin-top:6px">📤 SHARE WITH FRIENDS</button>
 </div>
 <div id="gameOverScreen" class="screen">
 <div class="go-title" id="goTitle">CAUGHT!</div>
@@ -149,6 +168,7 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 </div>
 <div class="high-score-note" id="highScoreNote" style="display:none">🏆 NEW HIGH SCORE!</div>
 <button class="start-btn" onclick="restartGame()">🐾 BACK TO MENU</button>
+<button class="start-btn" onclick="shareScore()" style="background:rgba(255,255,255,0.15);font-size:clamp(0.75rem,2vw,0.9rem);padding:8px 22px;margin-top:4px">📤 SHARE MY CHAOS</button>
 </div>
 <div id="tutorialScreen" class="screen" style="overflow-y:auto;padding:20px">
 <div style="max-width:500px;margin:0 auto;text-align:left;line-height:1.6">
@@ -3478,6 +3498,85 @@ document.addEventListener('click', function() { if (state === 'menu' || state ==
 document.addEventListener('touchstart', function() { if (state === 'menu' || state === 'playing') tryPlayMusic(); }, { passive: true });
 document.addEventListener('keydown', function() { if (state === 'menu' || state === 'playing') tryPlayMusic(); });
 
+</script>
+<script>
+// PWA Install Function
+function installPWA() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(function(result) {
+      if (result.outcome === 'accepted') {
+        console.log('User installed PWA');
+        if (typeof goatcounter !== 'undefined') goatcounter.count({ path: '/pwa-install', title: 'PWA Installed', event: true });
+      }
+      deferredInstallPrompt = null;
+      var installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.style.display = 'none';
+    });
+  }
+}
+
+// Share Score Function (game over screen)
+function shareScore() {
+  var rating = document.getElementById('chaosRating') ? document.getElementById('chaosRating').textContent : 'Chaos Master';
+  var scoreText = 'I just played UNLEASHED! 🐕💨 and got rated: ' + rating + '! Can you cause more chaos? 🐾';
+  var shareData = {
+    title: 'UNLEASHED! 🐕',
+    text: scoreText,
+    url: 'https://art367.github.io/unleashed-game/'
+  };
+  if (navigator.share) {
+    navigator.share(shareData).catch(function() {});
+  } else {
+    navigator.clipboard.writeText(scoreText + '\n' + shareData.url).then(function() {
+      alert('Score copied! Share it with your friends 🐾');
+    }).catch(function() {
+      prompt('Copy this to share:', scoreText + '\n' + shareData.url);
+    });
+  }
+  if (typeof goatcounter !== 'undefined') goatcounter.count({ path: '/share-score', title: 'Score Shared', event: true });
+}
+
+// Share Function
+function shareGame() {
+  var shareData = {
+    title: 'UNLEASHED! 🐕',
+    text: 'My dog just slipped the lead and caused CHAOS in the park! Can you beat my score? 🐾💨',
+    url: 'https://art367.github.io/unleashed-game/'
+  };
+  if (navigator.share) {
+    navigator.share(shareData).catch(function() {});
+  } else {
+    // Fallback: copy link
+    navigator.clipboard.writeText(shareData.url + '\n' + shareData.text).then(function() {
+      alert('Link copied! Share it with your friends 🐾');
+    }).catch(function() {
+      prompt('Copy this link to share:', shareData.url);
+    });
+  }
+  if (typeof goatcounter !== 'undefined') goatcounter.count({ path: '/share', title: 'Game Shared', event: true });
+}
+
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      console.log('UNLEASHED! SW registered, scope:', reg.scope);
+    }).catch(function(err) {
+      console.log('SW registration failed:', err);
+    });
+  });
+}
+
+// PWA Install Prompt
+var deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  // Show install button on menu screen
+  var installBtn = document.getElementById('installBtn');
+  if (installBtn) installBtn.style.display = 'inline-block';
+});
 </script>
 <!-- GoatCounter: free, privacy-friendly analytics (no cookies, no GDPR) -->
 <script data-goatcounter="https://unleashed-game.goatcounter.com/count"

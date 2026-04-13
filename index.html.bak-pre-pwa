@@ -4,23 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
 <title>UNLEASHED! 🐕</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="favicon.ico" type="image/x-icon">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="UNLEASHED!">
-<meta name="theme-color" content="#FFD93D">
-<meta name="description" content="Your dog's slipped the lead — chaos is about to happen! An endless runner where YOU are the naughty dog causing mayhem in the park.">
-<meta property="og:title" content="UNLEASHED! 🐕 — Dog Park Chaos">
-<meta property="og:description" content="Your dog's slipped the lead and chaos is about to happen! Play as a naughty dog causing mayhem in the park while your owner chases behind.">
-<meta property="og:image" content="https://art367.github.io/unleashed-game/icon-512.png">
-<meta property="og:url" content="https://art367.github.io/unleashed-game/">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="UNLEASHED! 🐕 — Dog Park Chaos">
-<meta name="twitter:description" content="Your dog's slipped the lead — play as a naughty dog causing mayhem in the park!">
-<meta name="twitter:image" content="https://art367.github.io/unleashed-game/icon-512.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#1a1a2e;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -65,15 +48,6 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 .poo-bag-btn .bag-count{font-size:0.55rem;color:#FFD93D;font-weight:bold;letter-spacing:0.5px;margin-top:1px}
 .poo-bag-btn.active{display:flex}
 @keyframes pooBounce{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
-/* Ad containers */
-.ad-container{width:100%;max-width:500px;margin:8px auto;text-align:center;min-height:50px;display:none}
-.ad-container.active{display:block}
-.ad-container.banner{min-height:50px;max-height:60px;overflow:hidden}
-.ad-container.interstitial{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center}
-.ad-container.interstitial.active{display:flex}
-.ad-skip-btn{background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.4);color:#fff;padding:10px 30px;border-radius:25px;font-size:0.9rem;cursor:pointer;margin-top:15px;display:none;pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.ad-skip-btn.visible{display:inline-block}
-.ad-label{color:rgba(255,255,255,0.3);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -130,13 +104,6 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 <button class="start-btn" onclick="showTutorial()" style="background:rgba(255,255,255,0.1);font-size:clamp(0.8rem,2.5vw,1rem);padding:8px 24px;margin-bottom:6px">📖 HOW TO PLAY</button>
 <button class="start-btn" onclick="startGame()">🐾 LET'S GO!</button>
 <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:12px">Arrow keys / touch to move • Space / tap to dash • B to bag poo</div>
-<button id="installBtn" class="start-btn" onclick="installPWA()" style="display:none;background:linear-gradient(135deg,#4CAF50,#2E7D32);font-size:clamp(0.8rem,2.5vw,1rem);padding:10px 28px;margin-top:8px">📲 INSTALL APP</button>
-<button class="start-btn" onclick="shareGame()" style="background:rgba(255,255,255,0.1);font-size:clamp(0.7rem,2vw,0.85rem);padding:6px 20px;margin-top:6px">📤 SHARE WITH FRIENDS</button>
-<!-- Banner ad on menu screen -->
-<div class="ad-container banner" id="menuBannerAd">
-<div class="ad-label">Advertisement</div>
-<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
-</div>
 </div>
 <div id="gameOverScreen" class="screen">
 <div class="go-title" id="goTitle">CAUGHT!</div>
@@ -182,20 +149,6 @@ h1{font-size:clamp(2.5rem,8vw,5rem);color:#FFD93D;text-shadow:0 0 30px rgba(255,
 </div>
 <div class="high-score-note" id="highScoreNote" style="display:none">🏆 NEW HIGH SCORE!</div>
 <button class="start-btn" onclick="restartGame()">🐾 BACK TO MENU</button>
-<button class="start-btn" onclick="shareScore()" style="background:rgba(255,255,255,0.15);font-size:clamp(0.75rem,2vw,0.9rem);padding:8px 22px;margin-top:4px">📤 SHARE MY CHAOS</button>
-<!-- Banner ad on game over screen -->
-<div class="ad-container banner" id="gameOverBannerAd">
-<div class="ad-label">Advertisement</div>
-<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
-</div>
-</div>
-<!-- Interstitial ad between games -->
-<div class="ad-container interstitial" id="interstitialAd">
-<div class="ad-label">Advertisement</div>
-<div id="interstitialAdContent" style="width:300px;height:250px;background:rgba(255,255,255,0.05);border-radius:12px;display:flex;align-items:center;justify-content:center">
-<ins class="adsbygoogle" style="display:inline-block;width:300px;height:250px" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX"></ins>
-</div>
-<button class="ad-skip-btn" id="adSkipBtn" onclick="closeInterstitialAd()">Continue Playing 🐾</button>
 </div>
 <div id="tutorialScreen" class="screen" style="overflow-y:auto;padding:20px">
 <div style="max-width:500px;margin:0 auto;text-align:left;line-height:1.6">
@@ -3185,8 +3138,6 @@ function gameOver() {
   if (window.goatcounter && goatcounter.count) {
     goatcounter.count({ path: 'game-over', title: 'Game Over', event: true });
   }
-  // Show interstitial ad (every N games)
-  if (typeof showInterstitialAd === 'function') showInterstitialAd();
   // Hide poo bag button
   var bagBtn = document.getElementById('pooBagBtn');
   if (bagBtn) bagBtn.classList.remove('active');
@@ -3527,172 +3478,6 @@ document.addEventListener('click', function() { if (state === 'menu' || state ==
 document.addEventListener('touchstart', function() { if (state === 'menu' || state === 'playing') tryPlayMusic(); }, { passive: true });
 document.addEventListener('keydown', function() { if (state === 'menu' || state === 'playing') tryPlayMusic(); });
 
-// ==================== AD SYSTEM ====================
-// Configure ads by replacing 'ca-pub-XXXXXXXXXXXXXXXX' with your AdSense publisher ID
-// and 'XXXXXXXXXX' with your ad unit slot IDs.
-// Set AD_CONFIG.enabled = true once your AdSense account is approved.
-
-var AD_CONFIG = {
-  enabled: false,  // Set to true once AdSense is approved
-  publisherId: 'ca-pub-XXXXXXXXXXXXXXXX',  // Replace with your AdSense publisher ID
-  bannerSlot: 'XXXXXXXXXX',     // Replace with banner ad slot ID
-  interstitialSlot: 'XXXXXXXXXX', // Replace with interstitial ad slot ID
-  interstitialFrequency: 3,   // Show interstitial every N game overs
-  interstitialDelay: 2000,    // Ms before showing skip button
-  bannerEnabled: true,         // Show banner ads on menu/game over
-  interstitialEnabled: true    // Show interstitial ads between games
-};
-
-var gameOverCount = 0;
-var interstitialShowing = false;
-
-function initAds() {
-  if (!AD_CONFIG.enabled) return;
-  // Update all ad units with actual publisher ID and slot IDs
-  var adUnits = document.querySelectorAll('.adsbygoogle');
-  adUnits.forEach(function(unit) {
-    unit.setAttribute('data-ad-client', AD_CONFIG.publisherId);
-  });
-  // Show banner containers
-  if (AD_CONFIG.bannerEnabled) {
-    var menuBanner = document.getElementById('menuBannerAd');
-    var gameOverBanner = document.getElementById('gameOverBannerAd');
-    if (menuBanner) menuBanner.classList.add('active');
-    if (gameOverBanner) gameOverBanner.classList.add('active');
-  }
-  // Push ads
-  try {
-    (adsbygoogle = window.adsbygoogle || []).push({});
-    (adsbygoogle = window.adsbygoogle || []).push({});
-    (adsbygoogle = window.adsbygoogle || []).push({});
-  } catch(e) { console.log('Ad init:', e); }
-}
-
-function showInterstitialAd() {
-  if (!AD_CONFIG.enabled || !AD_CONFIG.interstitialEnabled) return;
-  gameOverCount++;
-  if (gameOverCount % AD_CONFIG.interstitialFrequency !== 0) return;
-  
-  interstitialShowing = true;
-  var adEl = document.getElementById('interstitialAd');
-  var skipBtn = document.getElementById('adSkipBtn');
-  if (adEl) adEl.classList.add('active');
-  if (skipBtn) skipBtn.classList.remove('visible');
-  
-  // Try to load a fresh ad
-  try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
-  
-  // Show skip button after delay
-  setTimeout(function() {
-    if (skipBtn) skipBtn.classList.add('visible');
-  }, AD_CONFIG.interstitialDelay);
-  
-  // Track ad impression
-  if (window.goatcounter && goatcounter.count) {
-    goatcounter.count({ path: 'ad-interstitial', title: 'Interstitial Ad Shown', event: true });
-  }
-}
-
-function closeInterstitialAd() {
-  interstitialShowing = false;
-  var adEl = document.getElementById('interstitialAd');
-  if (adEl) adEl.classList.remove('active');
-}
-
-// Initialize ads when page loads (only if enabled)
-window.addEventListener('load', function() {
-  if (AD_CONFIG.enabled) initAds();
-});
-
-</script>
-<script>
-// PWA Install Function
-function installPWA() {
-  if (deferredInstallPrompt) {
-    deferredInstallPrompt.prompt();
-    deferredInstallPrompt.userChoice.then(function(result) {
-      if (result.outcome === 'accepted') {
-        console.log('User installed PWA');
-        if (typeof goatcounter !== 'undefined') goatcounter.count({ path: '/pwa-install', title: 'PWA Installed', event: true });
-      }
-      deferredInstallPrompt = null;
-      var installBtn = document.getElementById('installBtn');
-      if (installBtn) installBtn.style.display = 'none';
-    });
-  }
-}
-
-// Share Score Function (game over screen)
-function shareScore() {
-  var rating = document.getElementById('chaosRating') ? document.getElementById('chaosRating').textContent : 'Chaos Master';
-  var scoreText = 'I just played UNLEASHED! 🐕💨 and got rated: ' + rating + '! Can you cause more chaos? 🐾';
-  var shareData = {
-    title: 'UNLEASHED! 🐕',
-    text: scoreText,
-    url: 'https://art367.github.io/unleashed-game/'
-  };
-  if (navigator.share) {
-    navigator.share(shareData).catch(function() {});
-  } else {
-    navigator.clipboard.writeText(scoreText + '\n' + shareData.url).then(function() {
-      alert('Score copied! Share it with your friends 🐾');
-    }).catch(function() {
-      prompt('Copy this to share:', scoreText + '\n' + shareData.url);
-    });
-  }
-  if (typeof goatcounter !== 'undefined') goatcounter.count({ path: '/share-score', title: 'Score Shared', event: true });
-}
-
-// Share Function
-function shareGame() {
-  var shareData = {
-    title: 'UNLEASHED! 🐕',
-    text: 'My dog just slipped the lead and caused CHAOS in the park! Can you beat my score? 🐾💨',
-    url: 'https://art367.github.io/unleashed-game/'
-  };
-  if (navigator.share) {
-    navigator.share(shareData).catch(function() {});
-  } else {
-    // Fallback: copy link
-    navigator.clipboard.writeText(shareData.url + '\n' + shareData.text).then(function() {
-      alert('Link copied! Share it with your friends 🐾');
-    }).catch(function() {
-      prompt('Copy this link to share:', shareData.url);
-    });
-  }
-  if (typeof goatcounter !== 'undefined') goatcounter.count({ path: '/share', title: 'Game Shared', event: true });
-}
-
-// PWA Service Worker Registration
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').then(function(reg) {
-      console.log('UNLEASHED! SW registered, scope:', reg.scope);
-    }).catch(function(err) {
-      console.log('SW registration failed:', err);
-    });
-  });
-}
-
-// PWA Install Prompt
-var deferredInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  // Show install button on menu screen
-  var installBtn = document.getElementById('installBtn');
-  if (installBtn) installBtn.style.display = 'inline-block';
-});
-</script>
-<!-- Google AdSense (only loads when AD_CONFIG.enabled = true) -->
-<script>
-if (typeof AD_CONFIG !== 'undefined' && AD_CONFIG.enabled) {
-  var adScript = document.createElement('script');
-  adScript.async = true;
-  adScript.crossOrigin = 'anonymous';
-  adScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + AD_CONFIG.publisherId;
-  document.head.appendChild(adScript);
-}
 </script>
 <!-- GoatCounter: free, privacy-friendly analytics (no cookies, no GDPR) -->
 <script data-goatcounter="https://unleashed-game.goatcounter.com/count"
